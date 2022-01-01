@@ -2,6 +2,8 @@
 
 🤣 : At first ,  talk about the title 'plan 600' , why did I take this tile? Just because I wanna enhance my SQL ability and algorithm ability  
 
+### B
+
 > [!NOTE]
 > Information the user should notice even if skimming.
 
@@ -19,4 +21,106 @@
 
 > [!WARNING]
 > Dangerous certain consequences of an action.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[A](#plan 600)
+
+[B](#B)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
