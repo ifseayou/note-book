@@ -91,7 +91,7 @@ update Salary
 set sex = if(sex = 'm','f','m');
 ```
 
-###### [011- `LeetCode`1179problem](https://leetcode.com/problems/reformat-department-table/submissions/)
+###### [011- `LeetCode`1179 problem](https://leetcode.com/problems/reformat-department-table/submissions/)
 
 ```sql
 select id
@@ -112,6 +112,8 @@ group by id;
 
 -- if remove sum agg function ,we will find mysql return the first row
 ```
+
+#### tag-medium
 
 ###### [012- `LeetCode`176problem](https://leetcode.com/problems/second-highest-salary/submissions/)
 
