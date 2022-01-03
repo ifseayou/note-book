@@ -6,7 +6,7 @@ Almost 20 per day , it is really a challenge!
 
 ## SQL
 
-#### tag-easy
+### tag-easy
 
 some problem is extremely easy , so there is no need to describe solution
 
@@ -113,7 +113,7 @@ group by id;
 -- if remove sum agg function ,we will find mysql return the first row
 ```
 
-#### tag-medium
+### tag-medium
 
 ###### [012- `LeetCode`176problem](https://leetcode.com/problems/second-highest-salary/submissions/)
 
@@ -226,7 +226,7 @@ from seat
 order by id asc;
 ```
 
-#### tag-hard
+### tag-hard
 
 [018- `LeetCode`185problem](https://leetcode.com/problems/department-top-three-salaries/)
 
@@ -297,4 +297,112 @@ where t1.request_at >= '2013-10-01'
   and t3.banned = 'No'
 group by request_at
 ```
+
+## algorithms
+
+### easy-tag
+
+###### [001-`LeetCode`268problem](https://leetcode.com/problems/missing-number/)
+
+```java
+public int missingNumber2(int[] nums) { //xor
+    int res = nums.length;
+
+    for (int i = 0; i < nums.length; i++) {
+        res ^= i;
+        res ^= nums[i];
+    }
+    return res;
+}
+private int missingNumber(int[] nums) {
+    int sum = ((nums.length + 1) * (0 + nums.length)) >> 1;
+    for (int i = 0; i < nums.length; i++) {
+        sum -= nums[i];
+    }
+    return sum;
+}
+```
+
+the method two is easy to understand , but the first method is confused , thus you can print log to understand, like the following:
+
+```java
+public int missingNumberComplain(int[] nums) { //xor
+    int res = nums.length;
+    System.out.println("init res:" + res);
+    System.out.println("---------------------------------------");
+
+    for (int i = 0; i < nums.length; i++) {
+        System.out.print("i = " + i + "\t=>\t");
+        System.out.println("num[" + i + "] = " + nums[i]);
+        res ^= i;
+        System.out.print("res ^= " + i + " = " + res + "\t=>\t");
+        res ^= nums[i];
+        System.out.print("res ^= nums[" + i + "] = " + res + "\n");
+        System.out.println("---------------------------------------");
+    }
+    System.out.println("the last value:" + res);
+    return res;
+}
+```
+
+###### [002-`LeetCode`21problem](https://leetcode.com/problems/merge-two-sorted-lists/)
+
+offer two method one of is recursive
+
+```java
+public ListNode mergeTwoLists(ListNode list1, ListNode list2) {
+    if (list1 == null && list2 == null)
+        return null;
+    if (list1 == null) {
+        return list2;
+    }
+    if (list2 == null) {
+        return list1;
+    }
+
+    ListNode head = new ListNode(-1);
+    ListNode pre = head;
+
+    while (list1 != null && list2 != null) {
+        if (list1.val <= list2.val) {
+            pre.next = list1;
+            list1 = list1.next;
+        } else {
+            pre.next = list2;
+            list2 = list2.next;
+        }
+        pre = pre.next;
+    }
+    while (list1 != null) {
+        pre.next = list1;
+        break;
+    }
+    while (list2 != null) {
+        pre.next = list2;
+        break;
+    }
+    return head.next;
+}
+public ListNode mergeTwoLists2(ListNode list1, ListNode list2) {
+
+    if (list1 == null) {
+        return list2;
+    }
+    if (list2 == null) {
+        return list1;
+    }
+    if(list1.val <= list2.val){
+        list1.next = mergeTwoLists2(list1.next,list2);
+        return list1;
+    }else {
+        list2.next = mergeTwoLists2(list1,list2.next);
+        return list2;
+    }
+}
+
+```
+
+
+
+
 
