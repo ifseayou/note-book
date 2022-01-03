@@ -226,3 +226,75 @@ from seat
 order by id asc;
 ```
 
+#### tag-hard
+
+[018- `LeetCode`185problem](https://leetcode.com/problems/department-top-three-salaries/)
+
+```sql
+select Department
+        , Employee
+        , Salary
+from (
+         select t2.name   as                                                             Department
+              , t1.name   as                                                             Employee
+              , t1.salary as                                                             Salary
+              , dense_rank() over (partition by t1.departmentId order by t1.salary desc) rk
+         from Employee t1
+         left join Department t2
+         on t1.departmentId = t2.id
+     )t
+where t.rk <= 3
+```
+
+###### [019- `LeetCode`1601roblem](https://leetcode.com/problems/human-traffic-of-stadium/)
+
+```sql
+select distinct t1.*
+from stadium t1, stadium t2, stadium t3
+where t1.people >= 100
+  and t2.people >= 100
+  and t3.people >= 100
+  and ( -- from small to big
+        (t1.id + 1 = t2.id and t1.id + 2 = t3.id) or -- t1,t2,t3  like 4,56
+        (t2.id + 1 = t1.id and t2.id + 2 = t3.id) or -- t2,t1,t3
+        (t2.id + 1 = t3.id and t2.id + 2 = t1.id) -- t2,t3,t1
+    )
+order by id;
+
+-- the first method is faster than the second method
+
+select distinct t1.*
+from Stadium t1
+cross join Stadium t2
+cross join Stadium t3
+where t1.people >= 100
+  and t2.people >= 100
+  and t3.people >= 100
+  and ( -- from small to big
+        (t1.id + 1 = t2.id and t1.id + 2 = t3.id) or -- t1,t2,t3  like 4,56
+        (t2.id + 1 = t1.id and t2.id + 2 = t3.id) or -- t2,t1,t3
+        (t2.id + 1 = t3.id and t2.id + 2 = t1.id) -- t2,t3,t1
+    )
+order by id
+;
+```
+
+###### [020-`LeetCode`262roblem](https://leetcode.com/problems/trips-and-users/)
+
+```sql
+select request_at as  Day
+     , round(sum(if(t1.status in ('cancelled_by_client', 'cancelled_by_driver'), 1, 0)) / count(*), 2) as `Cancellation Rate`
+from Trips t1
+left join Users t2
+on t1.client_id = t2.users_id
+-- and t2.banned = 'No'
+left join Users t3
+on t1.driver_id = t3.users_id
+-- and t3.banned = 'No'
+where t1.request_at >= '2013-10-01'
+  and t1.request_at <= '2013-10-03'
+  and t2.banned = 'No'
+  and t3.banned = 'No'
+group by request_at
+```
+
