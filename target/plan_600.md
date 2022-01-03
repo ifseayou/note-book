@@ -304,6 +304,20 @@ group by request_at
 
 ###### [001-`LeetCode`268problem](https://leetcode.com/problems/missing-number/)
 
+:one:
+
+```java
+private int missingNumber(int[] nums) {
+    int sum = ((nums.length + 1) * (0 + nums.length)) >> 1;
+    for (int i = 0; i < nums.length; i++) {
+        sum -= nums[i];
+    }
+    return sum;
+}
+```
+
+:two:
+
 ```java
 public int missingNumber2(int[] nums) { //xor
     int res = nums.length;
@@ -314,16 +328,9 @@ public int missingNumber2(int[] nums) { //xor
     }
     return res;
 }
-private int missingNumber(int[] nums) {
-    int sum = ((nums.length + 1) * (0 + nums.length)) >> 1;
-    for (int i = 0; i < nums.length; i++) {
-        sum -= nums[i];
-    }
-    return sum;
-}
 ```
 
-the method two is easy to understand , but the first method is confused , thus you can print log to understand, like the following:
+the method 1 is easy to understand , but the second method is confused , thus you can print log to understand, like the following:
 
 ```java
 public int missingNumberComplain(int[] nums) { //xor
@@ -348,6 +355,8 @@ public int missingNumberComplain(int[] nums) { //xor
 ###### [002-`LeetCode`21problem](https://leetcode.com/problems/merge-two-sorted-lists/)
 
 offer two method one of is recursive
+
+:one:
 
 ```java
 public ListNode mergeTwoLists(ListNode list1, ListNode list2) {
@@ -383,26 +392,28 @@ public ListNode mergeTwoLists(ListNode list1, ListNode list2) {
     }
     return head.next;
 }
-public ListNode mergeTwoLists2(ListNode list1, ListNode list2) {
-
-    if (list1 == null) {
-        return list2;
-    }
-    if (list2 == null) {
-        return list1;
-    }
-    if(list1.val <= list2.val){
-        list1.next = mergeTwoLists2(list1.next,list2);
-        return list1;
-    }else {
-        list2.next = mergeTwoLists2(list1,list2.next);
-        return list2;
-    }
-}
-
 ```
 
+:two:
 
+public ListNode mergeTwoLists2(ListNode list1, ListNode list2) {
+
+```java
+if (list1 == null) {
+    return list2;
+}
+if (list2 == null) {
+    return list1;
+}
+if(list1.val <= list2.val){
+    list1.next = mergeTwoLists2(list1.next,list2);
+    return list1;
+}else {
+    list2.next = mergeTwoLists2(list1,list2.next);
+    return list2;
+}
+```
+}
 
 
 
