@@ -228,7 +228,7 @@ order by id asc;
 
 ### tag-hard
 
-[018- `LeetCode`185problem](https://leetcode.com/problems/department-top-three-salaries/)
+###### [018- `LeetCode`185problem](https://leetcode.com/problems/department-top-three-salaries/)
 
 ```sql
 select Department
@@ -246,7 +246,7 @@ from (
 where t.rk <= 3
 ```
 
-###### [019- `LeetCode`1601roblem](https://leetcode.com/problems/human-traffic-of-stadium/)
+###### [019- `LeetCode`1601problem](https://leetcode.com/problems/human-traffic-of-stadium/)
 
 ```sql
 select distinct t1.*
@@ -279,7 +279,7 @@ order by id
 ;
 ```
 
-###### [020-`LeetCode`262roblem](https://leetcode.com/problems/trips-and-users/)
+###### [020-`LeetCode`262 problem](https://leetcode.com/problems/trips-and-users/)
 
 ```sql
 select request_at as  Day
@@ -297,6 +297,162 @@ where t1.request_at >= '2013-10-01'
   and t3.banned = 'No'
 group by request_at
 ```
+
+
+
+###### [021~027-`滴滴数据分析实习生笔试` 7 个 problem]
+
+详细题目地址 :  ./img/滴滴出行国际化数据分析实习生笔试题.pdf
+
+```sql 
+-- 1 “五一”期间北京地区完成订单量；
+select count(*) order_cnt
+from `od`
+where order_status = 5
+  and finish_time >= '2021-05-01 00:00:00'
+  and finish_time < '2021-05-08 00:00:00'
+  and city_name = 'Beijing'
+;
+
+-- 2 截至2021年5月1日北京地区注册司机总数（不算5月1日）；
+
+select count(*) as driver_cnt
+from `drv`
+where city_name = 'Beijing'
+  and reg_time < '2021-05-01 00:00:00'
+;
+
+-- 3 北京地区所有激活司机“五一”期间每日人均完成订单量；
+-- method 1
+select to_date(finish_time)
+     , count(*) / count(distinct t1.driver_id)
+from `od` t1
+         left join `drv` t2
+                   on t1.driver_id = t2.driver_id
+where t1.finish_time >= '2021-05-01 00:00:00'
+  and t1.finish_time < '2021-05-08 00:00:00'
+  and t1.city_name = 'Beijing'
+  and t1.order_status = 5
+  and t2.is_regular = '1'
+group by to_date(t1.finish_time)
+;
+--
+select count(*) / count(distinct t1.driver_id) / 7
+from `od` t1
+         left join `drv` t2
+                   on t1.driver_id = t2.driver_id
+where t1.finish_time >= '2021-05-01 00:00:00'
+  and t1.finish_time < '2021-05-08 00:00:00'
+  and t1.city_name = 'Beijing'
+  and t1.order_status = 5
+  and t2.is_regular = '1'
+;
+
+-- 4.“五一”期间北京地区的日均DAU（司机在当地时区的当日完成订单数>=1则该司机算当日活跃司机）；
+select count(*)/7
+from (
+         select driver_id
+         from `od` t1
+         where t1.finish_time >= '2021-05-01 00:00:00'
+           and t1.finish_time < '2021-05-08 00:00:00'
+           and t1.city_name = 'Beijing'
+           and t1.order_status = 5
+         group by driver_id
+         having count(*) >= 1
+     ) t
+;
+
+-- 5.在巴西时间5月1日至5月5日巴西Belo城市快车和优享各自的日均完成订单量
+select product_id,
+         count(*)/5
+from od
+where city_name = 'Belo'
+ and from_utc_timestamp(to_utc_timestamp(finish_time, 'GMT+8'), "GMT-3") >= '2021-05-01'
+ and from_utc_timestamp(to_utc_timestamp(finish_time, 'GMT+8'), "GMT-3") < '2021-05-06'
+ and order_status = '5'
+ and  product_id in (1,2)
+group by  product_id
+;
+--6 在巴西时间5月1日至5月5日巴西Belo城市连续两天活跃的司机数；
+
+
+select count(*)
+from (
+         select driver_id
+         from (
+                  select driver_id
+                       , date_sub(order_date, row_number() over (partition by driver_id order by order_date)) diff
+                  from (
+                           select driver_id
+                                , to_date(from_utc_timestamp(to_utc_timestamp(finish_time, 'GMT+8'), "GMT-3")) order_date
+                           from od
+                           where city_name = 'Belo'
+                             and from_utc_timestamp(to_utc_timestamp(finish_time, 'GMT+8'), "GMT-3") >= '2021-05-01'
+                             and from_utc_timestamp(to_utc_timestamp(finish_time, 'GMT+8'), "GMT-3") < '2021-05-06'
+                             and order_status = '5'
+                           group by driver_id, to_date(from_utc_timestamp(to_utc_timestamp(finish_time, 'GMT+8'), "GMT-3"))
+                       ) t
+              ) t1
+         group by diff
+         having count(*) > 3
+     ) t2
+;
+-- 7 北京地区在4月26日至5月2日注册并激活且在5月3日至5月9日完成首单的司机数量（要求使用窗口函数）。
+
+select count(*)
+from (
+         select driver_id
+         from (
+                  select t1.driver_id
+                       , row_number() over (partition by t1.driver_id order by finish_time desc ) rk
+                  from od t1
+                           left semi
+                           join (
+                          select driver_id
+                          from drv
+                          where is_regular = '1'
+                            and reg_time >= '2021-04-26'
+                            and reg_time < '2021-05-03'
+                      ) t2
+                                on t1.driver_id = t2.driver_id
+                  where t1.finish_time >= '2021-05-03'
+                    and t1.finish_time < '2021-05-10'
+                    and t1.order_status = '1'
+              ) t
+         where rk = 1
+     ) t1
+;
+select count(*)
+from (
+         select driver_id
+         from (
+                  select t1.driver_id
+                       , t1.finish_time
+                       , t1.order_status
+                       , row_number() over (partition by t1.driver_id order by finish_time desc) rk
+                  from od t1
+                           left join drv t2
+                                     on t1.driver_id = t2.driver_id
+                                         and t2.reg_time >= '2021-04-26'
+                                         and t2.reg_time <= '2021-05-02'
+                                         and t2.is_regular = '1'
+                  where t1.finish_time > '2021-04-26'
+                    and t1.finish_time < '2021-05-10'
+                    and t1.city_name = 'Beijing'
+              ) t
+         where rk = 1
+           and finish_time >= '2021-05-03'
+           and finish_time < '2021-05-10'
+           and order_status = '1'
+     ) t1
+;
+```
+
+###### [028-`LeetCode`x Problem](https://leetcode.com/problems/trips-and-users/)
+
+
+
+
 
 ## algorithms
 
@@ -396,24 +552,26 @@ public ListNode mergeTwoLists(ListNode list1, ListNode list2) {
 
 :two:
 
-public ListNode mergeTwoLists2(ListNode list1, ListNode list2) {
-
 ```java
-if (list1 == null) {
-    return list2;
-}
-if (list2 == null) {
-    return list1;
-}
-if(list1.val <= list2.val){
-    list1.next = mergeTwoLists2(list1.next,list2);
-    return list1;
-}else {
-    list2.next = mergeTwoLists2(list1,list2.next);
-    return list2;
+public ListNode mergeTwoLists2(ListNode list1, ListNode list2) {
+    if (list1 == null) {
+        return list2;
+    }
+    if (list2 == null) {
+        return list1;
+    }
+    if(list1.val <= list2.val){
+        list1.next = mergeTwoLists2(list1.next,list2);
+        return list1;
+    }else {
+        list2.next = mergeTwoLists2(list1,list2.next);
+        return list2;
+    }
 }
 ```
-}
+###### [003-`LeetCode`27problem](https://leetcode.com/problems/remove-element/)
+
+un solve the problem.
 
 
 
