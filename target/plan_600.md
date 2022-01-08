@@ -448,7 +448,134 @@ from (
 ;
 ```
 
-###### [028-`LeetCode`x Problem](https://leetcode.com/problems/trips-and-users/)
+#### from nowcoder website SQL 
+
+###### [028-`nowcoder` SQL93 Problem](https://www.nowcoder.com/practice/048ed413ac0e4cf4a774b906fc87e0e7?tpId=82&&tqId=38864&rp=1&ru=/ta/sql&qru=/ta/sql/question-ranking)
+
+```sql
+select distinct  music_name
+from music_likes t1
+left join music t2
+on t1.music_id = t2.id
+where t1.user_id in ( -- 2,4
+    select follower_id
+    from follow
+    where user_id = 1
+)
+and t1.music_id not in (
+    select music_id
+    from music_likes
+    where user_id = 1
+    )
+order by music_id
+;
+```
+
+###### [029-`nowcoder` SQL92 Problem](https://www.nowcoder.com/practice/f257dfc1b55e42e19eec004aa3cb4174?tpId=82&tags=&title=&difficulty=0&judgeStatus=0&rp=1)
+
+```sql
+select t1.goods_id  as id
+     , max(t2.name) as name
+     , max(weight)  as weight
+     , sum(count)   as total
+from trans t1
+left join goods t2
+on t1.goods_id = t2.id
+group by t1.goods_id
+having sum(count) > 20
+   and max(t2.weight) < 50
+order by t1.goods_id
+;
+```
+
+
+
+###### [030-`nowcoder` SQL89 Problem](https://www.nowcoder.com/practice/1bfe3870034e4efeb4b4aa6711316c3b?tpId=82&&tqId=38359&rp=1&ru=/ta/sql&qru=/ta/sql/question-ranking)
+
+```sql
+select t2.name as name,
+       sum(t1.grade_num) as grade_num
+from grade_info t1
+left join user t2
+on t1.user_id = t2.id
+group by t2.name
+order by grade_num desc
+limit  1;
+```
+
+
+
+###### [031-`nowcoder` SQL90 Problem](https://www.nowcoder.com/practice/f257dfc1b55e42e19eec004aa3cb4174?tpId=82&tags=&title=&difficulty=0&judgeStatus=0&rp=1)
+
+```sql
+select id
+     , name
+     , grade_num
+from (
+         select max(t2.id)        as                                id
+              , t2.name           as                                name
+              , sum(t1.grade_num) as                                grade_num
+              , dense_rank() over (order by sum(t1.grade_num) desc)  as rk
+         from grade_info t1
+         left join user t2
+         on t1.user_id = t2.id
+         group by t2.name
+     ) t
+where rk = 1
+order by id
+;
+```
+
+###### [032-`nowcoder` SQL91 Problem](https://www.nowcoder.com/practice/d2b7e2a305a7499fb310dc82a43820e8?tpId=82&tags=&title=&difficulty=0&judgeStatus=0&rp=1)
+
+```sql
+select id
+     , name
+     , grade_num
+from (
+         select max(t2.id)                                            as id
+              , t2.name                                               as name
+              , sum(if(t1.type = 'add', t1.grade_num, -1 * t1.grade_num)) as grade_num
+              , dense_rank() over (order by sum(if(t1.type = 'add', t1.grade_num, -1 * t1.grade_num)) desc)   as rk
+         from grade_info t1
+         left join user t2
+         on t1.user_id = t2.id
+         group by t2.name
+     ) t
+where rk = 1
+order by id
+;
+```
+
+###### [033-`nowcoder` SQL87 Problem](https://www.nowcoder.com/practice/ae5e8273e73b4413823b676081bd355c?tpId=82&&tqId=37925&rp=1&ru=/ta/sql&qru=/ta/sql/question-ranking)
+
+```sql
+select grade,
+       sum(number) over (order by  grade) t_rank
+from class_grade
+order by t_rank
+;
+```
+
+###### [033-`nowcoder` SQL88 Problem](https://www.nowcoder.com/practice/165d88474d434597bcd2af8bf72b24f1?tpId=82&tqId=37925&rp=1&ru=%2Fta%2Fsql&qru=%2Fta%2Fsql%2Fquestion-ranking)
+
+```sql
+select grade
+from (
+         select grade
+              , ( select sum(number) from class_grade ) as total
+              , sum(number) over (order by grade)          a
+              , sum(number) over (order by grade desc)     b
+         from class_grade
+     ) t
+where a >= total / 2
+  and b >= total / 2
+order by grade;
+```
+
+<img src="./img/sql/03.jpg" width = "50%" height = "30%" alt="图片名称" align=center />
+
+
 
 
 

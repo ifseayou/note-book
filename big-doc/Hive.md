@@ -12,6 +12,8 @@ Hive
 
 Hive只是和数据库在SQL语句上有着类似之处，only。
 
+group by 之后，才会进行开窗
+
 
 
 ## 系统函数
