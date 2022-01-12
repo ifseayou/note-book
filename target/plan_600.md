@@ -300,7 +300,7 @@ group by request_at
 
 
 
-###### [021~027-`滴滴数据分析实习生笔试` 7 个 problem]
+###### 021~027-`滴滴数据分析实习生笔试` 7 个 problem
 
 详细题目地址 :  ./img/滴滴出行国际化数据分析实习生笔试题.pdf
 
@@ -574,6 +574,46 @@ order by grade;
 ```
 
 <img src="./img/sql/03.jpg" width = "50%" height = "30%" alt="图片名称" align=center />
+
+###### [034-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/96263162f69a48df9d84a93c71045753?tpId=268&tags=&title=&difficulty=0&judgeStatus=0&rp=0)
+
+```sql
+select  video_id
+, round(sum(tag)/count(*),3) as avg_com_play_rate
+from(
+select t1.video_id
+        , if(t2.duration <= timestampdiff(second, t1.start_time, t1.end_time),1,0) as tag
+from tb_user_video_log t1
+left join tb_video_info t2
+on t1.video_id = t2.video_id
+    where t1.start_time >= '2021-01-01 00:00:00'
+    and t1.end_time < '2022-01-01 00:00:00'
+    ) t
+group by video_id
+order by avg_com_play_rate desc
+;
+```
+
+###### [035-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/c60242566ad94bc29959de0cdc6d95ef?tpId=268&tqId=2285032&ru=%2Fta%2Fsql-factory-interview&qru=%2Fta%2Fsql-factory-interview%2Fquestion-ranking)
+
+```sql
+select tag,
+       concat(round(avg(rate) * 100,2),'%')  as avg_play_progress
+from (
+select t1.video_id
+        , t2.tag
+        , if(t2.duration <= timestampdiff(second, t1.start_time, t1.end_time),1, timestampdiff(second, t1.start_time, t1.end_time) / t2.duration) as rate
+from tb_user_video_log t1
+left join tb_video_info t2
+on t1.video_id = t2.video_id
+    ) t
+group by tag
+having avg(rate)> 0.6
+order by avg_play_progress desc
+;
+```
+
+
 
 
 

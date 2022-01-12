@@ -521,7 +521,7 @@ select k from t where id=1 for update; -- 写锁（X 锁，排他锁)
 
 :two:: 对于唯一索引来说，由于索引定义了唯一性，查找到第一个满足条件的记录后，就停止检索
 
-但是两者的性能差异微乎其微的，因为[InnoDB引擎是以数据页为单位来进行数据的读写的](当需要读一条记录的时候，并不是将目标记录本身从磁盘中读出来，而是以页为单位，将目标记录所在的页整体读入内存，每个数据页大小默认为16KB)，当找到 k = 5 的记录的时候，它所在的数据页已经在内存中了，普通索引需要多做一次的 **’查找和判断下一条记录‘**  只是一次指针寻址和一次计算,[如果k=5记录数据页的最后一个记录](这种情况的概率很低，计算平均性能的差异对现在的CPU来说可以忽略不计) 
+但是两者的性能差异微乎其微的，因为[`InnoDB`引擎是以数据页为单位来进行数据的读写的](当需要读一条记录的时候，并不是将目标记录本身从磁盘中读出来，而是以页为单位，将目标记录所在的页整体读入内存，每个数据页大小默认为16KB)，当找到 k = 5 的记录的时候，它所在的数据页已经在内存中了，普通索引需要多做一次的 **’查找和判断下一条记录‘**  只是一次指针寻址和一次计算,[如果k=5记录数据页的最后一个记录](这种情况的概率很低，计算平均性能的差异对现在的CPU来说可以忽略不计) 
 
 ## 更新过程
 
@@ -529,11 +529,11 @@ select k from t where id=1 for update; -- 写锁（X 锁，排他锁)
 
 :one: : 在内存中，直接对数据进行更新
 
-:two: : InnoDB将更新缓存在change buffer中，在下次访问这个数据页的时候，将数据读入内存，执行change buffer 中和这个数据页有关的更新操作。
+:two: : `InnoDB`将更新缓存在change buffer中，在下次访问这个数据页的时候，将数据读入内存，执行change buffer 中和这个数据页有关的更新操作。
 
-**[merger](将change buffer的操作应用到数据页，得到最终的结果的过程称之为 merger)** : 访问数据页时会出发merge ，系统后台线程会定期merge，在数据库正常关闭过程中，也会执行merge 
+**[merger](将change buffer的操作应用到数据页，得到最终的结果的过程称之为 merger)** : 访问数据页时会触发merge ，系统后台线程会定期merge，在数据库正常关闭过程中，也会执行merge 
 
-无疑，使用change buffer  能够有效的提升语句的执行效率，而且由于数据页不需要读入内存占用**[buffer pool](changer buffer 使用的是buffer pool 的内存，默认占用50%，可以通过innodb_change_buffer_max_size来指定)**,还可以提高内存利用率。为什么唯一索引不能使用change buffer的[reason](因为唯一索引需要检查当前的插入是否违反了唯一约束，这个检查需要将数据页读取到内存中，因此不能使用change buffer)。只有普通索引可以使用change buffer，对于一张表需要插入新记录 (5,500),InnoDB的处理流程如下：
+无疑，使用change buffer  能够有效的提升语句的执行效率，而且由于数据页不需要读入内存占用**[buffer pool](changer buffer 使用的是buffer pool 的内存，默认占用50%，可以通过innodb_change_buffer_max_size来指定)**,还可以提高内存利用率。为什么唯一索引不能使用change buffer的 [reason](因为唯一索引需要检查当前的插入是否违反了唯一约束，这个检查需要将数据页读取到内存中，因此不能使用change buffer)。只有普通索引可以使用change buffer，对于一张表需要插入新记录 (5,500),`InnoDB`的处理流程如下：
 
 :one: 这个记录在内存中
 
@@ -651,15 +651,15 @@ from SUser;
 
 :four: MySQL正常关闭的时候，刷写脏页
 
-其中情况1出现的时候，MySQL会阻塞所有更新，从监控上看，更新数变为0 ；情况2出现的时候，MySQL使用buffer pool来管理内存，bufffer pool 中的内存页存在三种状态：`
+其中情况1出现的时候，MySQL会阻塞所有更新，从监控上看，更新数变为0 ；情况2出现的时候，MySQL使用buffer pool来管理内存，buffer pool 中的内存页存在三种状态：`
 
 * 还没有使用的
 * 使用了而且是干净页
 * 使用了而且是脏页
 
-当读入的数据页没有在内存中时，必须从 buffer pool中申请新页，淘汰则会淘汰最久不使用的数据页，如果是干净页直接释放出来使用，入股是脏页，必须将脏页刷写到磁盘变成干净也才能使用，MySQL刷脏页是一个常态，但是一个查询要淘汰的脏页个数太多时，会导致查询时间加长。
+当读入的数据页没有在内存中时，必须从 buffer pool中申请新页，淘汰则会淘汰最久不使用的数据页，如果是干净页直接释放出来使用，如果是脏页，必须将脏页刷写到磁盘变成干净也才能使用，MySQL刷脏页是一个常态，但是一个查询要淘汰的脏页个数太多时，会导致查询时间加长。
 
-[InnoDB 刷脏页的控制策略 待更]()。
+[`InnoDB`刷脏页的控制策略 待更]()。
 
 
 
@@ -1152,7 +1152,106 @@ todo:待更
 
 # 32 | 为什么还有kill不掉的语句？
 
+# 33 | 我查这么多数据，会不会把数据库内存打爆？
+
+## 全表扫描对 server层的影响
+
+假如，现在有一个 对 200G的`InnoDB`表 db1.t 进行全表扫描，并将结果集保存在客户端的需求，你可能会有下面命令：
+
+```sql
+mysql -h$host -P$port -u$user -p$pwd -e "select * from db1.t" > $target_file
+```
+
+那么server端 取数据和发数据的流程是下面这样的：
+
+:one: 获取一行，写到 net_buffer 中。这块内存的大小是由参数 net_buffer_length 定义的，默认是 16k。
+
+:two: 重复获取行，直到 net_buffer 写满，调用网络接口发出去。
+
+:three: 如果发送成功，就清空 net_buffer，然后继续取下一行，并写入 net_buffer。
+
+:four: 如果发送函数返回 EAGAIN 或 WSAEWOULDBLOCK，就表示本地网络栈（socket send buffer）写满了，进入等待。直到网络栈重新可写，再继续发送。
+
+整个流程如下：
+
+<img src="./img/myl/36.jpg" width = 70% height = 80% alt="图片名称" align=center />
+
+执行 `show processlist ` state 处于 Sending to client 状态的，就表示服务器端的网络线程写满了。**对于正常的线上业务来说，如果一个查询的返回结果不会很多的话，我都建议你使用 `mysql_store_result` 这个接口，直接把查询结果保存到本地内存**。
+
+## 全表扫描对`InnoDB`的影响
+
+**内存利用率**： [buffer pool](实际是 buffer pool 中的 change buffer) 可以起到加速更新的作用，同时也具备加速查询的作用，事务提交的时候，磁盘的数据页是旧的，如果马上有一个查询来读数据页，MySQL并不需要将redo log 应用到数据页，也是直接读内存页就可以了。Buffer pool 对查询的加速效果，依赖内存命中率。`show engine innodb status`  搜索hit 即可定位到。[如何设置buffer pool的大小？](其中 buffer pool 的大小，可通过 参数 `innodb_buffer_pool_size` 设置，一般设置为物理内存的 60%~80%。)  
+
+`InnoDB` 内存管理使用的 [LRU](Least Recently Used) 这个缓存淘汰算法，并且是基于链表实现的缓存淘汰算法。 
+
+<img src="./img/myl/37.jpg" width = 90% height = 80% alt="图片名称" align=center />
+
 # 34 | 到底可不可以使用join？
+
+:fire: 首先，对于我们的查询语句，在上线之前，explain一下是很有必要的，那么对于explain的几种类型需要了解：
+
+:one: `const `: 根据主键 等值匹配，唯一索引(is null除外) 等值匹配
+
+:two: index : 索引覆盖，无须回表
+
+:three: ref ： 普通索引等值匹配 ，普通索引 is null ，唯一索引 is null
+
+:four: range: 主键索引或者唯一索引范围查询，或者普通索引范围查询 ， 若范围在总范围中占比大，会变为 ALL
+
+其中，各个类型的优劣如下：
+
+>  `const `> ref > index > range > all 
+
+t1 和 t2的表结构如下：其中t1中100条记录，t2中1000条记录。
+
+```sql
+create table `t2` (`id` int(11) not null,
+                   `a`  int(11) default null,
+                   `b`  int(11) default null,
+                   primary key (`id`),
+                   key `a` (`a`)
+) engine = innodb
+```
+
+### Index Nested-Loop Join
+
+```sql
+select * from t1 straight_join t2 on (t1.a = t2.a);
+```
+
+当前语句的执行流程：
+
+:one: 从表 t1 中读入一行数据 R；
+
+:two: 从数据行 R 中，取出 a 字段到表 t2 里去查找；
+
+:three: 取出表 t2 中满足条件的行，跟 R 组成一行，作为结果集的一部分；
+
+:four: 重复执行步骤 1 到 3，直到表 t1 的末尾循环结束。
+
+<img src="./img/myl/38.jpg" width = 80% height = 80% alt="图片名称" align=center />
+
+### Block Nested-Loop Join
+
+```sql 
+select * from t1 straight_join t2 on (t1.a=t2.b);
+```
+
+由于t2的字段b上没有索引，每次去t2匹配的时候，就需要做一个全表扫描。共需要扫描：  
+$$
+100,000 = 100\times1000
+$$
+
+
+
+
+
+
+
+
+
+
+
 
 # 35 | join语句怎么优化？
 

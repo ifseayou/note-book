@@ -14,10 +14,6 @@ PostgreSQL中主要有三种类型的数据类型：
 drop schema my_schema cascade ; --  删除模式，并删除该模式下的所有。	
 ```
 
-
-
-
-
 ```sql
 SELECT *   
 FROM EMPLOYEES   
