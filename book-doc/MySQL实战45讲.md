@@ -1019,7 +1019,7 @@ todo : 部分内容没有做总结
 
 左图为[主备切换流程](M-S架构)，右图为节点 A 到 B 这条线的内部流程是什么样的。
 
-<img src="./img/myl/32.jpg" width = 90% height = 80% alt="图片名称" align=center />
+<img src="./img/myl/32.jpg" width = 90% height = 80% alt="图片名称" align=center /> 
 
 一个事务日志同步的完整过程是这样的：
 
@@ -1048,7 +1048,7 @@ row 格式使用 mysqlbinlog工具解析出来的结果：
 
 M-M架构 
 
-<img src="./img/myl/34.jpg" width = 70% height = 80% alt="图片名称" align=center />
+<img src="./img/myl/34.jpg" width = 70% height = 80% alt="图片名称" align=center /> 
 
 
 
@@ -1092,7 +1092,7 @@ M-M架构
 
 主要介绍：备库并行复制能力。MySQL5.6之前备库的复制时单线程的。为什么要有多线程复制呢？这是因为单线程复制的能力全面低于多线程复制，对于更新压力较大的主库，备库是可能一直追不上主库的。从而导致备库上 seconds_behind_master 的值越来越大。
 
-<img src="./img/myl/35.png" width = 80% height = 80% alt="图片名称" align=center />
+<img src="./img/myl/35.png" width = 80% height = 80% alt="图片名称" align=center /> 
 
 coordinator 在分发的时候，需要满足以下这两个基本要求：
 
@@ -1174,7 +1174,7 @@ mysql -h$host -P$port -u$user -p$pwd -e "select * from db1.t" > $target_file
 
 整个流程如下：
 
-<img src="./img/myl/36.jpg" width = 70% height = 80% alt="图片名称" align=center />
+<img src="./img/myl/36.jpg" width = 70% height = 80% alt="图片名称" align=center /> 
 
 执行 `show processlist ` state 处于 Sending to client 状态的，就表示服务器端的网络线程写满了。**对于正常的线上业务来说，如果一个查询的返回结果不会很多的话，我都建议你使用 `mysql_store_result` 这个接口，直接把查询结果保存到本地内存**。
 
@@ -1213,7 +1213,7 @@ create table `t2` (`id` int(11) not null,
 ) engine = innodb
 ```
 
-### Index Nested-Loop Join
+## Index Nested-Loop Join
 
 ```sql
 select * from t1 straight_join t2 on (t1.a = t2.a);
@@ -1229,9 +1229,15 @@ select * from t1 straight_join t2 on (t1.a = t2.a);
 
 :four: 重复执行步骤 1 到 3，直到表 t1 的末尾循环结束。
 
-<img src="./img/myl/38.jpg" width = 80% height = 80% alt="图片名称" align=center />
+<img src="./img/myl/38.jpg" width = 80% height = 80% alt="图片名称" align=center /> 
 
-### Block Nested-Loop Join
+如果t1 = N 行，t2 M 行，近似复杂度如下：
+$$
+O(N)= N + N \times2\times\log2 M
+$$
+可以发现，N 越小，整个复杂度越低。
+
+## Simple Nested-Loop Join
 
 ```sql 
 select * from t1 straight_join t2 on (t1.a=t2.b);
@@ -1241,25 +1247,89 @@ select * from t1 straight_join t2 on (t1.a=t2.b);
 $$
 100,000 = 100\times1000
 $$
+MySQL并没有使用这个Simple Nested-Loop Join 算法， 而是 Block Nested-Loop Join
 
+## Block Nested-Loop Join
 
+对于 查询，流程如下：`select * from t1 straight_join t2 on (t1.a=t2.b);`
 
+:one: 把表 t1 的数据读入线程内存 join_buffer 中，由于我们这个语句中写的是 select *，因此是把整个表 t1 放入了内存；
 
+:two: 扫描表 t2，把表 t2 中的每一行取出来，跟 join_buffer 中的数据做对比，满足 join 条件的，作为结果集的一部分返回。
 
+这个过程对 t1和 t2都做了一次全表扫描 ， 总的扫描行数是1100，对于t2的每一行都需要在内存中做判断，共需要 100,000 次比较。但是这个比较是基于内存操作，比Simple Nested-Loop Join 快很多。
 
+其中 [join_buffer](是可以通过 join_buffer_size 进行设定的,默认256k) 如果放不下驱动表，就需要分块（block）放置，过程如下：
 
+:one: 扫描表 t1，顺序读取数据行放入 join_buffer 中，放完第 88 行 join_buffer 满了，继续第 2 步；
 
+:two: 扫描表 t2，把 t2 中的每一行取出来，跟 join_buffer 中的数据做对比，满足 join 条件的，作为结果集的一部分返回；
 
+:three: 清空 join_buffer；
 
+:four: 继续扫描表 t1，顺序读取最后的 12 行数据放入 join_buffer 中，继续执行第 2 步。
 
+<img src="./img/myl/39.jpg" width = 80% height = 80% alt="图片名称" align=center /> 
+
+* 扫描行数 : N+λ * N * M （λ 取值(0,1)）
+
+* 内存判断 : N * M
+
+**在决定哪个表做驱动表的时候，应该是两个表按照各自的条件过滤，过滤完成之后，计算参与 join 的各个字段的总数据量，数据量小的那个表，就是“小表”，应该作为驱动表**。
 
 # 35 | join语句怎么优化？
+
+```sql
+create table t1(id int primary key, a int, b int, index(a)); 
+-- t1 插入1000行数据，每行的a = 1001-id，即表t1中的字段a是逆序的
+create table t2 like t1;  -- 在表t2中插入 100w 数据
+```
+
+## Multi-Range Read 优化
+
+```sql
+select * from t1 where a>=1 and a<=100;
+```
+
+如上查询中，会涉及到回表的过程，回表过程是一行行查询数据，还是批量的查询数据呢？主键索引是一颗B+树，每次只能根据一个主键id 查到一行数据，因此**回表一定是一行行搜索主键索引的**。在上面的例子中，如果随着a的值递增顺序查询的话，id的值就变成随机的了，那么就会出现随机访问磁盘，性能相对较差。
+
+> 因为大多数的数据都是按照主键递增顺序插入得到的，所以我们可以认为，如果按照主键的递增顺序查询的话，对磁盘的读比较接近顺序读，能够提升读性能。
+
+以上，就是 MRR 优化的设计思路。此时，语句的执行流程变成了这样：
+
+:one: 根据索引 a，定位到满足条件的记录，将 id 值放入 read_rnd_buffer 中 ; (如果read_rnd_buffer 放置满了，就会先执行 2,3步骤)
+
+:two: 将 read_rnd_buffer 中的 id 进行递增排序；
+
+:three: 排序后的 id 数组，依次到主键 id 索引中查记录，并作为结果返回。
+
+<img src="./img/myl/40.jpg" width = 90% height = 80% alt="图片名称" align=center /> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # 36 | 为什么临时表可以重名？
 
 # 37 | 什么时候会使用内部临时表？
 
-# 38 | 都说InnoDB好，那还要不要使用Memory引擎？
+# 38 | 都说`InnoDB`好，那还要不要使用Memory引擎？
 
 # 39 | 自增主键为什么不是连续的？
 
