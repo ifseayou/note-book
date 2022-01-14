@@ -613,7 +613,69 @@ order by avg_play_progress desc
 ;
 ```
 
+###### [036-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/a78cf92c11e0421abf93762d25c3bfad?tpId=268&tqId=2285068&ru=/ta/sql-factory-interview&qru=/ta/sql-factory-interview/question-ranking)
 
+:one: 
+
+```sql
+select t2.tag
+    , sum(if(t1.if_retweet=1,1,0)) as retweet_cnt
+    , round(sum(if(t1.if_retweet=1,1,0)) / count(*),3) as retweet_rate
+from  tb_user_video_log t1
+left join tb_video_info t2
+on t1.video_id = t2.video_id
+where datediff((select max(start_time) from tb_user_video_log), t1.start_time) <= 29
+group by  t2.tag
+order by retweet_rate desc;
+```
+
+:two:
+
+```sql
+select t2.tag
+    , sum(t1.if_retweet) as retweet_cnt
+    , round(sum(t1.if_retweet) / count(*),3) as retweet_rate
+from  tb_user_video_log t1
+left join tb_video_info t2
+on t1.video_id = t2.video_id
+where datediff((select max(start_time) from tb_user_video_log), t1.start_time) <= 29
+group by  t2.tag
+order by retweet_rate desc;
+```
+
+Gudience ：we will find that if we use the method 2 ,it will use the data feature to avoid judge 'if_retweet=1' logic,sometime we can optimize the SQL via the data status.
+
+###### [037-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/f90ce4ee521f400db741486209914a11?tpId=268&tags=&title=&difficulty=0&judgeStatus=0&rp=0)
+
+```sql
+select tag
+     , dt
+     , sum_like_cnt_7d
+     , max_retweet_cnt_7d
+from (
+         select tag
+              , dt
+              , like_cnt
+              , retweet_cnt
+              , sum(like_cnt) over (partition by tag order by dt rows 6 preceding)    as sum_like_cnt_7d
+              , max(retweet_cnt) over (partition by tag order by dt rows 6 preceding) as max_retweet_cnt_7d
+         from (
+                  select t2.tag
+                       , date(t1.start_time) dt
+                       , sum(if_like)    as  like_cnt
+                       , sum(if_retweet) as  retweet_cnt
+                  from tb_user_video_log t1
+                           left join tb_video_info t2
+                                     on t1.video_id = t2.video_id
+                  where date(start_time) <= '2021-10-03'
+                    and date(start_time) >= date_sub('2021-10-01', interval 6 day)
+                  group by t2.tag, date(t1.start_time)
+              ) t
+     ) t2
+where dt >= '2021-10-01'
+  and dt <= '2021-10-03'
+order by tag desc,dt;
+```
 
 
 

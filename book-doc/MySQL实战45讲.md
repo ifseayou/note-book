@@ -1305,7 +1305,13 @@ select * from t1 where a>=1 and a<=100;
 
 <img src="./img/myl/40.jpg" width = 90% height = 80% alt="图片名称" align=center /> 
 
+## Batched Key Access
 
+Batched Key Accesss（BKA）算法，其实是对[NLJ](Index Nested Loop Join) 算法的优化，NLJ的逻辑是，从驱动表t1，一行行取出a的值，再到被驱动表t2做join,而BKA的逻辑是，将表t1的数据取出来一部分，放置到join_buffer中，然后一起传给表t2。
+
+<img src="./img/myl/41.jpg" width = 100% height = 80% alt="图片名称" align=center />
+
+Post Script : BKA 算法的优化要依赖于 MRR，使用BKA的前提是开启了 MRR。
 
 
 
@@ -1327,27 +1333,49 @@ select * from t1 where a>=1 and a<=100;
 
 # 36 | 为什么临时表可以重名？
 
+
+
+
+
+
+
 # 37 | 什么时候会使用内部临时表？
+
+
 
 # 38 | 都说`InnoDB`好，那还要不要使用Memory引擎？
 
+
+
 # 39 | 自增主键为什么不是连续的？
+
+
 
 # 40 | insert语句的锁为什么这么多？
 
+
+
 # 41 | 怎么最快地复制一张表？
+
+
 
 # 42 | grant之后要跟着flush privileges吗？
 
+
+
 # 43 | 要不要使用分区表？
 
+
+
 # 44 | 答疑文章（三）：说一说这些好问题
+
+
 
 # 45 | 自增id用完怎么办？
 
 
 
-**MySQL  的 unique key 约束  ： 允许多个null **
+**MySQL  的 unique key 约束  ： 允许多个null**
 
 ```sql
 create table if not exists `unique_key_test`
