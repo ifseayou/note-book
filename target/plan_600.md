@@ -677,6 +677,68 @@ where dt >= '2021-10-01'
 order by tag desc,dt;
 ```
 
+###### [038-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/0226c7b2541c41e59c3b8aec588b09ff?tpId=268&tqId=2285071&ru=/practice/f90ce4ee521f400db741486209914a11&qru=/ta/sql-factory-interview/question-ranking)
+
+```sql
+select video_id,
+       round((100 * complete_rate + 5 * like_cnt + 3 * comment_cnt + 2 * retweet_cnt) / (un_play_day_cnt + 1),0) as hot_index
+from (
+         select t1.video_id
+              , sum(if(t2.duration <= timestampdiff(second, start_time, end_time), 1, 0)) / count(*) as complete_rate
+              , sum(if_like)                                                                         as like_cnt
+              , count(comment_id)                                                                    as comment_cnt
+              , sum(if_retweet)                                                                      as retweet_cnt
+              , datediff(( select max(end_time) from tb_user_video_log ), max(t1.end_time))          as un_play_day_cnt
+         from tb_user_video_log t1
+                  inner join tb_video_info t2
+                             on t1.video_id = t2.video_id
+         where datediff(( select max(end_time) from tb_user_video_log ), t2.release_time) <= 29
+         group by t1.video_id
+     ) t
+order by hot_index desc limit 3
+```
+
+###### [039-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/8e33da493a704d3da15432e4a0b61bb3?tpId=268&tqId=2285071&ru=%2Fpractice%2Ff90ce4ee521f400db741486209914a11&qru=%2Fta%2Fsql-factory-interview%2Fquestion-ranking)
+
+```sql
+select  substring(in_time,1,10) as dt ,
+       round(sum(timestampdiff(second ,in_time,out_time)) / count(distinct uid),1) as avg_view_len_sec
+from tb_user_log
+where in_time >= '2021-11-01'
+and in_time < '2021-12-01'
+and artical_id <> 0
+group by substring(in_time,1,10)
+order by avg_view_len_sec;
+```
+
+###### [040-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/fe24c93008b84e9592b35faa15755e48?tpId=268&tqId=2285071&ru=%2Fpractice%2Ff90ce4ee521f400db741486209914a11&qru=%2Fta%2Fsql-factory-interview%2Fquestion-ranking)
+
+```sql
+select artical_id,
+       max(uv) as max_uv
+from (
+         select artical_id
+              , sum(diff) over (partition by artical_id order by dt,diff desc) uv
+         from (
+                  select artical_id
+                       , in_time as dt
+                       , 1       as diff
+                  from tb_user_log
+                  where artical_id <> 0
+                  union all
+                  select artical_id
+                       , out_time as dt
+                       , -1       as diff
+                  from tb_user_log
+                  where artical_id <> 0
+              ) t
+     ) t1
+group by artical_id
+order by max_uv desc;
+```
+
+Gudience : this method called **[code plus union](编码+联立)**, you should pay attention to the `over (partition by artical_id order by dt,diff desc)`。
+
 
 
 
