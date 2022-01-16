@@ -739,9 +739,98 @@ order by max_uv desc;
 
 Gudience : this method called **[code plus union](编码+联立)**, you should pay attention to the `over (partition by artical_id order by dt,diff desc)`。
 
+###### [041-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/fe24c93008b84e9592b35faa15755e48?tpId=268&tqId=2285071&ru=%2Fpractice%2Ff90ce4ee521f400db741486209914a11&qru=%2Fta%2Fsql-factory-interview%2Fquestion-ranking)
+
+```sql
+select artical_id,
+       max(uv) as max_uv
+from (
+         select artical_id
+              , sum(diff) over (partition by artical_id order by dt,diff desc) uv
+         from (
+                  select artical_id
+                       , in_time as dt
+                       , 1       as diff
+                  from tb_user_log
+                  where artical_id <> 0
+                  union all
+                  select artical_id
+                       , out_time as dt
+                       , -1       as diff
+                  from tb_user_log
+                  where artical_id <> 0
+              ) t
+     ) t1
+group by artical_id
+order by max_uv desc;
+```
 
 
 
+###### [042-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/1fc0e75f07434ef5ba4f1fb2aa83a450?tpId=268&tags=&title=&difficulty=0&judgeStatus=0&rp=0)
+
+```sql
+with tmp as (
+    select uid
+         , dt
+         , count(*) over (partition by uid order by dt) cnt
+    from (
+             select uid
+                  , date(in_time) as dt
+             from tb_user_log
+             union
+             select uid
+                  , date(out_time) as dt
+             from tb_user_log
+         ) t
+)
+select today.dt as dt
+     , round(count(tomorrow.uid) / count(*),2) as uv_left_rate
+from tmp today
+left join tmp tomorrow
+on today.uid= tomorrow.uid
+and today.dt = date_sub(tomorrow.dt, interval 1 day)
+where today.cnt = 1
+and today.dt >= '2021-11-01'
+and today.dt <= '2021-11-30'
+group by today.dt
+order by dt;
+```
+
+Gudience: when we wanna get   **left rate** relate index , Left join is high frequency
+
+###### [043-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/6765b4a4f260455bae513a60b6eed0af?tpId=268&tags=&title=&difficulty=0&judgeStatus=0&rp=0)
+
+```sql
+with max_day as (
+    select date(max(in_time)) as today
+    from tb_user_log
+)
+select user_grade,
+       round(count(*) / (select count(distinct uid) from tb_user_log),2) as ratio
+from (
+         select uid
+              , case
+                    when date(max(in_time)) between date_sub(( select today from max_day ), interval 6 day) and ( select today from max_day ) -- 最大活跃日期在7天之内
+                        and date(min(in_time)) < date_sub(( select today from max_day ), interval 6 day) -- 最小活跃日期在7天开外
+                        then '忠实用户'
+                    when date(min(in_time)) between date_sub(( select today from max_day ), interval 6 day) and ( select today from max_day ) -- 最小活跃日期在7天之内
+                        then '新晋用户'
+                    when date(max(in_time)) between date_sub(( select today from max_day ), interval 6 day) and date_sub(( select today from max_day ), interval 29 day) -- 最大活跃日期在7天和30天范围之间的
+                        then '沉睡用户'
+                    else '流失用户'
+             end as user_grade
+         from tb_user_log
+         group by uid
+     ) t
+group by user_grade
+order by ratio desc
+```
+
+Gudience：when you meet in 7 days or 30days , you should reflect the following equals:
+
+* in 7 day =  date_sub(current_day,interval 6 day) 
+* in 30 day = date_sub(current_day,interval 29 day)
 
 
 
