@@ -1,8 +1,10 @@
-### Apollo
+# Apollo
 
-## 是什么？
+## 01-Apollo是什么？
 
-Apollo是 一个配置管理中心，主要用来统一配置。能够集中化管理应用不同环境，不同集群的配置，配置修改之后能够实时推送到客户端，并且具备规范的权限，流程治理等特性。
+Apollo（阿波罗）是携程框架部门研发的分布式配置中心，能够集中化管理应用不同环境、不同集群的配置，配置修改后能够实时推送到应用端，并且具备规范的权限、流程治理等特性，**适用于微服务配置管理场景**。
+
+简言之：Apollo是 一个配置管理中心，主要用来统一配置。
 
 Apollo支持4个维度管理Key-Value格式的配置：
 
@@ -28,23 +30,17 @@ Apollo目前唯一的外部依赖是MySQL
   - 虽然这类框架类组件是由其他团队开发、维护，但是运行时是在业务实际应用内的，所以本质上可以认为框架类组件也是应用的一部分。
   - 这类组件对应的配置也需要有比较完善的管理方式。
 
+## 02-Apollo的原理
 
-
-### 问题：
-
-什么是是 system properties？
-
-## 原理
-
-#### 服务端
+### 2.1服务端原理
 
 ![](img/apo/1.png)
 
-#### 客户端原理
+### 2.2客户端原理
 
 ![](img/apo/2.png)
 
-### Hello world
+## 03-上手案例
 
 现在已经有了Apollo的服务中心，建立java客户端来读取服务器的配置。建立一个boot项目
 
@@ -104,9 +100,9 @@ Apollo的配置：
 
 
 
-## Apollo和boot
+## 04-Apollo和spring-boot
 
-### `spring boot`读取Apollo配置的案例1：
+### 4.1 spring boot 读取Apollo配置的案例1：
 
 Apollo上面的配置信息：
 
@@ -188,7 +184,7 @@ apollo.bootstrap.namespaces = application
 
 ![](img/apo/8.png)
 
-### spring boot读取Apollo配置的案例2：
+### 4.2 spring boot读取Apollo配置的案例2：
 
 Apollo的配置信息：
 
