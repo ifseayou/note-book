@@ -130,7 +130,3 @@
 
 
 
-如果可以的话，欢迎关注下我的个人公众号：【指飞机】（PS：手指的指哦）
-
-![1590637051533](C:\Users\isea_you\AppData\Roaming\Typora\typora-user-images\1590637051533.png)
-
