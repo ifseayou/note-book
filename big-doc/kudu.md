@@ -5,9 +5,7 @@
 * Kudu 捻角羚  
 * Impala   高角羚 
 
-这两个组件都是Apache顶级的开源组件，并且都是由Cloudera开源的，从Cloudera 给这两个组件命名的角度来讲，这个两个组件应当是对完美的CP，事实也是这样。
-
-官网对其的介绍为：
+这两个组件都是Apache顶级的开源组件，并且都是由Cloudera开源的，从Cloudera 给这两个组件命名的角度来讲，这个两个组件应当是对完美的CP，事实也是这样。官网对其的介绍为：
 
 * open source distributed data storage engine.
 
@@ -17,7 +15,7 @@
 
 ## KUDU 介绍
 
-kudu是Hadoop生态系统中的列存储引擎，Kudu 可运行在商业硬件上，支持水平扩展和高可用。Kudu的设计让它与众不同，Kudu的优点包括：
+kudu是Hadoop生态系统中的**列存储引擎**，Kudu 可运行在商业硬件上，支持水平扩展和高可用。Kudu的设计让它与众不同，Kudu的优点包括：
 
 * 在OLAP工作负载上有快速的表现
 
@@ -31,15 +29,13 @@ kudu是Hadoop生态系统中的列存储引擎，Kudu 可运行在商业硬件�
 
 * 易于运维管理
 
-* Master和TServer采用**raft**算法，该算法可确保只要副本总数的一半以上可用，tablet就可以进行读写操作。例如，如果3个副本中有2个副本或5个副本中有3个副本可用，则tablet可用。即使主tablet出现故障，也可以通过只读的副tablet提供读取服务。
-
-  即便 `tablet-leader `挂掉的情况下，`tablet-follower `也可以提供读服务
+* Master和TServer采用**raft**算法，该算法可确保只要副本总数的一半以上可用，tablet就可以进行读写操作。例如，如果3个副本中有2个副本或5个副本中有3个副本可用，则tablet可用。即便  `tablet-leader `挂掉的情况下，`tablet-follower `也可以提供读服务
 
 * 结构化数据模型
 
-综合上面的特性，Kudu 的目标是解决当代Hadoop存储引擎很难或者不可能解决的问题，下面的问题Kudu可以很好的处理：
+综合上面的特性，Kudu 的目标是解决 Hadoop存储引擎很难或者不可能解决的问题，下面的问题使用Kudu可以得到很好的解决：
 
-* 最新更新的数据，需要通过报表应用快速的反馈给终端用户
+* 最近更新的数据，需要通过报表应用快速的反馈给终端用户
 * 时序应用必须同时支持：
   * 快速查询历史数据
   * 快速的相应一些细粒度的查询，比如查询单条数据
@@ -73,36 +69,36 @@ impala在建立表，修改表，删除表时，可以使用Kudu 作为持久化
 
 ## 架构
 
-####  官网架构图
+###  官网架构图
 
 ![官网架构图](img/kudu/k1.jpg)
 
-#### 详细架构图
+### 详细架构图
 
 ![](img/kudu/k3.jpg)
 
 ### 一些概念
 
-#### **列式存储**
+#### 列式存储
 
 kudu使用列式存储，OLAP中的常用存储格式，
 
 * 便于获取少量列（相同列的数据相邻，行存储在分布在不同的block on disk），
 * 便于压缩
 
-#### **Table**
+#### Table
 
 存储在Kudu中的表，会按照主键（primary key） 排序，一个表（table） 会被拆分成多个段(segment) ，每个段叫做 tablet
 
 #### **Tablet** 分区
 
-是 表的一个段，类似于其他存储引擎中的分区，只是叫法不同，一个tablet 会有一个多个副本，其中一个副本是 leader tablet ,所有的副本都可以相应读请求，写请求由 leader 来实现。Tablet leader 失效时，由  [Raft Consensus Algorithm](https://kudu.apache.org/docs/index.html#raft) 来保证leader 共识问题(即选取中新的副本Leader)。
+是表的一个段，类似于其他存储引擎中的分区，只是叫法不同，一个tablet 会有一个多个副本，其中一个副本是 leader tablet ,**所有的副本都可以相应读请求，写请求由 leader 来实现**，即单主模式。Tablet leader 失效时，由  [Raft Consensus Algorithm](https://kudu.apache.org/docs/index.html#raft) 来保证leader 共识问题(即选取中新的副本Leader)。
 
-#### **Tablet Server**
+#### Tablet Server
 
-一个 Tablet Server 包含多个 Tablet，一个Tablet 可以存储多个Tablet Server, 
+一个 Tablet Server 包含多个 Tablet，一个Tablet 可以分布在多个Tablet Server, 即tablet 和 tablet-server是多对多的关系。
 
-#### **Master**
+#### Master
 
 有多个，都叫master，但是只有一个leader ，Mater leader 失效时，由  [Raft Consensus Algorithm](https://kudu.apache.org/docs/index.html#raft) 来处理 leader 共识问题（即选取中新的Leader）。Master的作用包括：
 
@@ -112,14 +108,14 @@ kudu使用列式存储，OLAP中的常用存储格式，
 
 此外，Master的数据信息存储在Tablet 中，保证 leader master 的数据的可靠性；master还会检测tablet Server 的心跳。
 
-#### **Catalog Table**
+#### Catalog Table
 
 存储两种元数据：
 
-* 表的元数据，表的schemeas,存储位置，状态
+* 表的元数据，表的schemas,存储位置，状态
 * Tablet（分区）元数据，存在Tablets，每个Tablet Server  具有那个Tablet的副本，当前状态，起始和终止key
 
-#### **Logical Replication** 逻辑复制
+#### Logical Replication逻辑复制
 
 kudu采用的复制方式并不是基于磁盘的物理复制，逻辑复制，具有以下优点：
 
@@ -127,19 +123,17 @@ kudu采用的复制方式并不是基于磁盘的物理复制，逻辑复制，�
 * 压缩操作，不需要通过网络传输数据，这一点不同于使用HDFS存储的系统需要通过网络进行大量的数据传输
 * 在执行压缩时，Tablet不需要立即执行，在存储层表现为异步压缩，如此可以避免在执行压缩和高负载写入时导致的查询高延迟
 
-#### 遥望 Kudu 及其分布
 
-![](img/kudu/k2.jpg)
 
-**其中cdhkudumaster001 是 Master 中的Leader节点** 
+
 
 ## Kudu Schema 设计
 
-### 概述
+**Kudu 表具备和RDBMS相似的结构化数据模型**，Kudu表Schema的设计是非常重要的，因为这影响到kudu能否实现最佳的性能，下面的文档描述设计高效kudu表Schema的哲学，尤其要注意设计kudu表结构和设计关系型数据库系统表结构的差别。
 
-Kudu 表具备和RDBMS相似的结构化数据模型，Kudu表Schema的设计是非常重要的，因为这影响到kudu能否实现最佳的性能，下面的文档描述设计高效kudu表Schema的哲学，尤其要注意设计kudu表结构和设计关系型数据库系统表结构的差别。
+在更高的层次来看，设计kudu表结构主要涉及三处：**<u> 设计列、设计主键、设计分区</u>**  ，其中设计分区是有别于关系型数据库系统中表结构设计的。加下来的部分讨论 修改已经存在表的schema，了解其中（各种schema）的局限。
 
-在更高的层次来看，设计kudu表结构主要涉及三处：<u> 设计列、设计主键、设计分区</u>  ，其中设计分区是有别于 关系型数据库系统中表结构设计的。加下来的部分讨论 修改已经存在表的schema，了解其中（各种schema）的局限。
+[直接参考官网]()
 
 ## 将 Kudu 和 Impala 结合使用
 
@@ -281,6 +275,7 @@ stored as kudu;
 考虑到在简单hash的例子中，如果您需要经常 对sku 的范围进行查询，您可以通过结合hash和range 来优化上面的分区方式。
 下面的例子中仍然会创建16个tablet ，首先会按照 id 字段散列到4个桶中，然后使用range分区按照sku字段将每个桶划分到4个tablet 中。如此，写压力会负载到至少4个tablet（有可能达到16个），当您进行一个连续的sku范围查询时，您将会有很大的概率只需要查询 四分之一的 tablet。
 🧡： 默认情况下，使用`partition by hash` 主键所有字段将会散列，当需要对主键部分字段散列时，需要特别指定 `partition by hash('id')`
+
 ```sql
 create table cust_behavior (
   id bigint,
@@ -403,6 +398,7 @@ insert into my_kudu_table
 #### 插入 和 主键唯一性违规 insert and primary key uniqueness violations
 在大多数关系型数据中，如果您尝试插入一行已经存在的数据，由于唯一性约束您的插入会失败。但是在 kudu + impala 中，会执行插入语句，但是会生成一个告警。
 如果插入的行是为了替代已经存在的行，可以使用 `upsert` 语句 而不是 `insert` 语句，比如下面的例子：
+
 ```sql 
 insert into my_first_table values (99, "sarah");
 upsert into my_first_table values (99, "zoe");
@@ -422,6 +418,7 @@ update my_first_table set name="bob" where id = 3;
 你可以使用更复杂的删除语法。from 子句中的 逗号是impala join 查询的一种方式，关于更多的impala join 查询参考  https://impala.apache.org/docs/build/html/topics/impala_joins.html.
 `delete c from my_second_table c, stock_symbols s where c.name = s.symbol;`
 🧡 注意，`delete` 语句只有在impala + kudu 环境下才会生效
+
 #### 批量删除
 您可以像批量插入那样记性批量删除
 `delete from my_first_table where id < 3;`
