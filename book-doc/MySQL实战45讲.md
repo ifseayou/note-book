@@ -70,7 +70,7 @@ MySQL中有2个重要的日志：
 
 ## redolog
 
-对于一个更新操作来说，如果每次更新都需要立刻写磁盘，则MySQL的存储引擎需要找到被更新的记录，然后更新。这个先定位在更新的机制必然有一定的成本（查找成本+IO成本）。MySQL尝试使用下面的思路来提升 **更新效率**
+对于一个更新操作来说，如果每次更新都需要立刻写磁盘，则MySQL的存储引擎需要找到被更新的记录，然后更新。这个先定位再更新的机制必然有一定的成本（查找成本+IO成本）。MySQL尝试使用下面的思路来提升 **更新效率**
 
 > **WAL : Write - Ahead Logging ： 先写日志，后写磁盘。**
 
@@ -260,11 +260,11 @@ values (100, 1),
 
 建表时维护自增主键的优势：
 
-:one: 不会发生列分列
+:one: 不会发生页分裂
 
 :two: 自增主键一般占用的空间比较小，二级索引存储主键时，占用存储也比较小。
 
-:tipping_hand_man: 无论是删除主键索引还是创建主键索引，都会导致表重建，而重建普通索引可以达到节省空间的目的，如果你有重建主键索引的需求：`alter table T engine=InnoDB` 会出发MySQL重建表，并进行碎片处理，达到节省空间的目的。
+:tipping_hand_man: 无论是删除主键索引还是创建主键索引，都会导致表重建，而重建普通索引可以达到节省空间的目的，如果你有重建主键索引的需求：`alter table T engine=InnoDB` 会触发MySQL重建表，并进行碎片处理，达到节省空间的目的。
 
 # 05 深入浅出 索引 (下)
 
@@ -360,7 +360,7 @@ select * from tuser where name like '张%' and age=10 and ismale=1;
 
 ## 全局锁
 
-MySQL通过[FTWRL](`Flush tables with read lock` ),来加全局锁，加上全局锁之侯，所有的数据更新语句和DML语句都会被阻塞。全局锁的典型使用场景是：**做全库的逻辑备份**。[通过FTWRL的方式来添加全局锁，可以有效的突破的存储引擎带来的限制](MyISAM是不支持事务的，如果是InnoDB引擎，在RR的情况下，可以实现逻辑备份并且备份的时是支持更新的)。
+MySQL通过[FTWRL](`Flush tables with read lock` ),来加全局锁，加上全局锁之后，所有的数据更新语句和DML语句都会被阻塞。全局锁的典型使用场景是：**做全库的逻辑备份**。[通过FTWRL的方式来添加全局锁，可以有效的突破的存储引擎带来的限制](MyISAM是不支持事务的，如果是InnoDB引擎，在RR的情况下，可以实现逻辑备份并且备份的时是支持更新的)。
 
 [关于使用FTWRL 还是使用 set global readonly=true](https://time.geekbang.org/column/article/69862)
 
@@ -373,7 +373,7 @@ MySQL 的表级锁有2种
 
 ### 表锁
 
-（假设是线程A）锁表的语法`lock table t1 read,t2 write` ,使用 `unlock talbe ` 释放锁，对于改锁表语句：
+（假设是线程A）锁表的语法`lock table t1 read,t2 write` ,使用 `unlock talbe ` 释放锁，对于该锁表语句：
 
 * 除了A之外的线程 对 t1 可读，对 t2 不可读写，
 * 线程A 在执行unlock tables之前，只能执行读 t1, 读写 t2, 不能在访问其他表（写t1都不行，更别他其他的表了）
@@ -387,7 +387,7 @@ MySQL 的表级锁有2种
 
 <img src="./img/myl/10.jpg" width = 70% height = 70% alt="图片名称" align=center />
 
-处理上诉问题，我们首先要尽量避免长事务（session A位置 及时 commit），
+处理上述问题，我们首先要尽量避免长事务（session A位置 及时 commit）
 
 ```sql
 ALTER TABLE tbl_name NOWAIT add column ...
@@ -418,7 +418,7 @@ MySQL 的行锁是在引擎层面实现的，InnoDB支持行锁，MyISAM不支�
 
 下面的例子为，行锁中的死锁。<img src="./img/myl/12.jpg" width = 60% height = 40% align=center />
 
-出现死锁后，有2中策略：
+出现死锁后，有2种策略：
 
 :one:进入等待状态，直到[超时](超时时间有innodb_lock_wait_timeout 指定，默认50s), 由于超时时间阈值设置过小可能会导致[假阴性](误杀)，通常不会采用此方案
 
@@ -461,7 +461,7 @@ MySQL 的行锁是在引擎层面实现的，InnoDB支持行锁，MyISAM不支�
 
 > :one: 版本未提交，不可见；
 >
-> :two: 版本已提交，但是是
+> :two: 版本已提交，但是
 >
 > * 在视图创建后提交的，不可见；
 > * 是在视图创建前提交的，可见。
