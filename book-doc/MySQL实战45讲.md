@@ -12,6 +12,8 @@ IO成本就是寻址时间和上下文切换所需要的时间，最主要是用
 
 《Linux性能优化实战》。
 
+:a: 请注意，本文脚注的作用是对前一段描述内容的解释说明。更好的阅读体验可以使用typora。
+
 ------
 
 # 01 基础架构：一条SQL是如何执行的
@@ -77,7 +79,7 @@ MySQL中有2个重要的日志：
 
  <img src="./img/myl/02.jpg" width = "700" height = "450" alt="图片名称" align=center />
 
- 有了redo log， InnoDB可以实现 [**crash-safe**](保证在数据库发生异常重启之后，之前提交的记录不会丢失)。
+ 有了redo log， InnoDB可以实现 crash-safe[^保证在数据库发生异常重启之后，之前提交的记录不会丢失]
 
 redo log的写入 被拆分为2个步骤 ： prepare + commit 也就是**两阶段提交**： 
 

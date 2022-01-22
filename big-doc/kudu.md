@@ -13,25 +13,25 @@
 
 该组件 Apache Kudu 1.0 在 2016-09-19日由  [Cloudera](https://en.wikipedia.org/wiki/Cloudera)  发布
 
-## KUDU 介绍
+## 1-KUDU 介绍
 
-kudu是Hadoop生态系统中的**列存储引擎**，Kudu 可运行在商业硬件上，支持水平扩展和高可用。Kudu的设计让它与众不同，Kudu的优点包括：
+kudu是Hadoop生态系统中的**列存储引擎**，Kudu 可运行在商业硬件上，支持水平扩展和高可用。Kudu的优点包括：
 
-* 在OLAP工作负载上有快速的表现
+:one: 在OLAP工作负载上有快速的表现
 
-* 易于与Hadoop生态的组件（如MapReduce、Spark、Impala 等）集成
+:two: 易于与Hadoop生态的组件（如MapReduce、Spark、Impala 等）集成
 
-* 与 impala 紧密集成，可选择使用 Parquet 存储格式
+:three: 与 impala 紧密集成，可选择使用 Parquet 存储格式
 
-* 提供灵活的强一致性，提供包括可序列化等一致性
+:four: 提供灵活的强一致性，提供包括可序列化等一致性
 
-* 顺序工作负载和随机工作负载都有很优异的表现（对随机读写和顺序读写都有很好的支持）
+:five: 顺序工作负载和随机工作负载都有很优异的表现（对随机读写和顺序读写都有很好的支持）
 
-* 易于运维管理
+:six: 易于运维管理
 
-* Master和TServer采用**raft**算法，该算法可确保只要副本总数的一半以上可用，tablet就可以进行读写操作。例如，如果3个副本中有2个副本或5个副本中有3个副本可用，则tablet可用。即便  `tablet-leader `挂掉的情况下，`tablet-follower `也可以提供读服务
+:seven: Master和TServer采用**raft**算法，该算法可确保只要副本总数的一半以上可用，tablet就可以进行读写操作。例如，如果3个副本中有2个副本或5个副本中有3个副本可用，则tablet可用。即便  `tablet-leader `挂掉的情况下，`tablet-follower `也可以提供读服务
 
-* 结构化数据模型
+:eight: 结构化数据模型
 
 综合上面的特性，Kudu 的目标是解决 Hadoop存储引擎很难或者不可能解决的问题，下面的问题使用Kudu可以得到很好的解决：
 
@@ -41,81 +41,83 @@ kudu是Hadoop生态系统中的**列存储引擎**，Kudu 可运行在商业硬�
   * 快速的相应一些细粒度的查询，比如查询单条数据
 * 基于所有历史数据定期刷新预测模型来做出实时决策的应用程序
 
-## Kudu-Imapla 集成特点
+## 2-Kudu-Imapla 集成特点
 
-**01 `CREATE/ALTER/DROP TABLE` | 建表、修改表、删除表**
+##### 01 `CREATE/ALTER/DROP TABLE` | 建表、修改表、删除表
 
 impala在建立表，修改表，删除表时，可以使用Kudu 作为持久化层(存储引擎使用Kudu)，使用这种方式创建的表仍然支持独立建立impala表的操作，允许灵活的数据查询和摄取，**使用kudu作为持久层，不需要refresh table或者invalidate metadata table**
 
-**02 `INSERT` | 插入数据**
+##### 02 `INSERT` | 插入数据
 
 和impala一致的插入语句
 
-**03 `UPDATE` /`DELETE` 更新表数据，删除表数据**
+##### 03 `UPDATE` /`DELETE` 更新表数据，删除表数据
 
 友好支持impala语法
 
-**04 Flexible Partitioning | 灵活分区**
+##### 04 Flexible Partitioning | 灵活分区
 
 为了更好的在用户距离更近的机器上执行分布式读写，kudu允许你使用hash 和range 两种方式进行分区，[Schema Design](https://kudu.apache.org/docs/schema_design.html#schema_design) 。
 
-**05 Parallel Scan | 并行扫描**
+##### 05 Parallel Scan | 并行扫描
 
 使用impala查询引擎，在多个tablets执行并行扫描
 
-**06 High-efficiency queries | 高效的查询**
+##### 06 High-efficiency queries | 高效的查询
 
 在可能的情况下，Impala 将谓词评估下推到 Kudu，以便尽可能接近数据评估谓词。在许多工作负载中，查询性能可与 Parquet 相媲美。
 
-## 架构
+## 3-架构
 
-###  官网架构图
+###  3.1-官网架构图
 
-![官网架构图](img/kudu/k1.jpg)
+<img src="./img/kudu/k1.jpg" width = "60%" height = "60%" alt="图片名称" align=center />
 
-### 详细架构图
+### 3.2-详细架构图
 
 ![](img/kudu/k3.jpg)
 
-### 一些概念
+### 3.3-一些概念
 
-#### 列式存储
+#### 3.3.1列式存储
 
 kudu使用列式存储，OLAP中的常用存储格式，
 
 * 便于获取少量列（相同列的数据相邻，行存储在分布在不同的block on disk），
 * 便于压缩
 
-#### Table
+#### 3.3.2-Table
 
 存储在Kudu中的表，会按照主键（primary key） 排序，一个表（table） 会被拆分成多个段(segment) ，每个段叫做 tablet
 
-#### **Tablet** 分区
+#### 3.3.3-Tablet 分区
 
 是表的一个段，类似于其他存储引擎中的分区，只是叫法不同，一个tablet 会有一个多个副本，其中一个副本是 leader tablet ,**所有的副本都可以相应读请求，写请求由 leader 来实现**，即单主模式。Tablet leader 失效时，由  [Raft Consensus Algorithm](https://kudu.apache.org/docs/index.html#raft) 来保证leader 共识问题(即选取中新的副本Leader)。
 
-#### Tablet Server
+#### 3.3.4-Tablet Server
 
 一个 Tablet Server 包含多个 Tablet，一个Tablet 可以分布在多个Tablet Server, 即tablet 和 tablet-server是多对多的关系。
 
-#### Master
+#### 3.3.5Master
 
 有多个，都叫master，但是只有一个leader ，Mater leader 失效时，由  [Raft Consensus Algorithm](https://kudu.apache.org/docs/index.html#raft) 来处理 leader 共识问题（即选取中新的Leader）。Master的作用包括：
 
-* 追踪所有的 Tablet 、tablet server 、Catalog Table 
-* 保存集群的其他的元数据信息
-* 处理 clinet  的读写请求，比如当客户端向Master提交建表请求时，master会在catalog table写入表元数据信息，并协调进程在Tablet Server 上创建Tablet 
+:one: 追踪所有的 Tablet 、tablet server 、Catalog Table 
+
+:two: 保存集群的其他的元数据信息
+
+:three: 处理 clinet  的读写请求，比如当客户端向Master提交建表请求时，master会在catalog table写入表元数据信息，并协调进程在Tablet Server 上创建Tablet 
 
 此外，Master的数据信息存储在Tablet 中，保证 leader master 的数据的可靠性；master还会检测tablet Server 的心跳。
 
-#### Catalog Table
+#### 3.3.6-Catalog Table
 
 存储两种元数据：
 
 * 表的元数据，表的schemas,存储位置，状态
-* Tablet（分区）元数据，存在Tablets，每个Tablet Server  具有那个Tablet的副本，当前状态，起始和终止key
+* Tablet（分区）元数据，存在Tablets，每个Tablet Server  具有哪个Tablet的副本，**当前状态，起始和终止key**
 
-#### Logical Replication逻辑复制
+#### 3.3.7-Logical Replication逻辑复制
 
 kudu采用的复制方式并不是基于磁盘的物理复制，逻辑复制，具有以下优点：
 
@@ -123,11 +125,7 @@ kudu采用的复制方式并不是基于磁盘的物理复制，逻辑复制，�
 * 压缩操作，不需要通过网络传输数据，这一点不同于使用HDFS存储的系统需要通过网络进行大量的数据传输
 * 在执行压缩时，Tablet不需要立即执行，在存储层表现为异步压缩，如此可以避免在执行压缩和高负载写入时导致的查询高延迟
 
-
-
-
-
-## Kudu Schema 设计
+## 4-Kudu Schema 设计
 
 **Kudu 表具备和RDBMS相似的结构化数据模型**，Kudu表Schema的设计是非常重要的，因为这影响到kudu能否实现最佳的性能，下面的文档描述设计高效kudu表Schema的哲学，尤其要注意设计kudu表结构和设计关系型数据库系统表结构的差别。
 
@@ -135,14 +133,14 @@ kudu采用的复制方式并不是基于磁盘的物理复制，逻辑复制，�
 
 [直接参考官网]()
 
-## 将 Kudu 和 Impala 结合使用
+## 5-将 Kudu 和 Impala 结合使用
 
 kudu 和 impla可以进行几乎完美的结合，对于存储于Kudu中的数据，您可以使用impala的语法进行 增删改查。
-### 内部表和外部 impala表
+### 5.1-内部表和外部 impala表
 当你使用impala 创建kudu表的时候，您可以选择创建外部表或者是内部表
 * 内部表： 当您使用impla创建表的时候，通常是有个内部表，内部表是 被impala 管理的表，删除表意味着表结构和数据都将会被删除
 * 外部表：使用 `create external table --语句` ，一个外部表并不会被impala管理，删除外部表时，仅仅会删除impala  和 kudu表的映射关系。这种方便于将kudu中存在得表映射到impala。
-### 使用impala SQL语法创建 kudu表
+### 5.2-使用impala SQL语法创建 kudu表
 ```sql 
 create table test.my_first_table(
     id   bigint,
@@ -154,10 +152,14 @@ tblproperties ('kudu.master_addresses' = 'cdhkudumaster001:7051,cdhkudumaster002
     'kudu.num_tablet_replicas' = '3');
 ```
 关于建表语句中需要注意的地方：
-* 主键必须放置在第一位，且主键隐式标记 `not null`
-* 默认的副本数为3，且**只能设置为奇数**，一但设置副本数量，就不能（`alter table`）修改
-* 可以选择设置分区，也可以不设置分区
-#### `create talbe as select`
+
+:one:  主键必须放置在第一位，且主键隐式标记 `not null`
+
+:two: 默认的副本数为3，且**只能设置为奇数**，一但设置副本数量，就不能（`alter table`）修改
+
+:three:   可以选择设置分区，也可以不设置分区
+
+#### 5.2.1-`create talbe as select`
 下面的例子中通过 `create table .. as select` 的方式建表，
 * 将`old_talbe`的所有记录导入 `new_table`表中，
 * `new_table`的字段名和字段类型  取决于 `old_table`的字段名和字段类型
@@ -169,7 +171,7 @@ partition by hash(name) partitions 8
 stored as kudu tblproperties ('kudu.master_addresses' = 'cdhkudumaster001:7051,cdhkudumaster002:7051,cdhkudumaster003:7051','kudu.num_tablet_replicas' = '3')    
 as select ts, name, value from old_table;
 ```
-#### 指定Tablet 分区
+#### 5.2.2-指定Tablet 分区
 理想情况下，Table较为均匀的分配到各个Tablet Server 中，Kudu目前没有手动或者自动的划分已经存在的Tablet的机制，在这个机制实现之前，您**必须在创建表的时候指定分区** 。在设置表的scheme时，**分区会按照主键(主键可能是分区主键)的字段去分区**。
 ```sql
 create table cust_behavior (
@@ -200,21 +202,24 @@ partition by range (_id)
 stored as kudu
 tblproperties ('kudu.master_addresses' = 'cdhkudumaster001:7051');
 ```
-### impala databases 和 kudu
+### 5.3-impala databases 和 kudu
 每个impala 表都有一个namespace 我们称之为 database,默认的database 叫做default，用户可以创建或者删除其他的database。
 当我们使用impala创建kudu表的时候，被创建的kudu表会按照 `impala::database_name.table_name`的方式命名。
-下面几个impala中的关键词，在创建kudu表的时候是无效的：partitioned - location - rowformat
-### 优化-评估SQL谓词的性能
+下面几个impala中的关键词，在创建kudu表的时候是无效的：partitioned - location - rowformat。
+
+### 5.4-优化-评估SQL谓词的性能
+下面的关乎：==kudu剪裁还是impala剪裁==
+
 * where子句包含 `= <= >= < > between in` kudu会表现出最佳性能，因为kudu会直接将相关结果返回给impala 
 * 对于 `!= like` 或者其他谓词，kudu会将所有结果集返回给impala，然后依赖impala去过滤结果集
-### 分区表
-kudu表会根据kudu 表的主键和分区scheme 将table  partition到tablets 中，每个tablet（分区）至少由一个 tablet server 提供服务。理想情况下，table 应该被划分到尽可能多的tablet server 以获得更大的并行操作。您的partition scheme 设计细节取决于您怎样访问您存储的数据和您存储的数据类型，关于苦读表的设计，参考Scheme design。
+
+### 5.5-分区表
+kudu表会根据kudu 表的主键和分区scheme 将table  partition到tablets 中，每个tablet（分区）至少由一个 tablet server 提供服务。理想情况下，table 应该被划分到尽可能多的tablet server 以获得更大的并行操作。您的partition scheme 设计细节取决于您怎样访问您存储的数据和您存储的数据类型，关于kudu表的设计，参考[Scheme design](https://kudu.apache.org/docs/schema_design.html)。
 
 对于已经创建好的table，kudu 目前没有切割或者合并的机制，所以在您创建表的时候，必须要提供partition scheme。设计表时，请考虑使用主键，以便将 table  partition（分区）为以相似速率增长的tablet 。
 
 您可以使用 impala 的 `partition by` 关键词，将 table partition 分区，分区方式为：`range ` 和 `hash` 。分区方式可以包含 0个或者多个 hash方式 , 加上可选的 range方式 。range 方式需要1个或者多个 主键列（可能多列主键）
-#### 基础分区
-##### partition by range
+#### 5.5.1-partition by range
 您可以指定主键的1列或者多列为range分区字段，kudu中的range分区方式支持等于特定值或者在某个特定的范围内，这样允许您平衡写入并行度和扫描效率。假设您有一张表具有 `state,name,purchaser_count` 3个字段，下面的例子中会创建50个tablets ，每个是美国的一个州。
 💔 注意：对于单调递增的值，如果您使用了range的分区方式，并且分区字段呈现单调递增的趋势，那么最后一个tablet 相对于其他分区将会越来越大。在这种情况下，建议您使用hash的分区方式或者 将range 和 hash 结合起来使用。
 
@@ -237,11 +242,13 @@ partition by range (state)
 stored as kudu;
 ```
 
-##### partition by hash
+#### 5.5.2-partition by hash
 并不像range 分区、或者结合范围分区方式那样，hash的方式将数据较为均匀的散列到  bucket 中。您需要指定散列的主键列和散列桶的个数。假设被分区的字段本身没有表现出严重的倾斜，数据也会比较均匀的分布在各个桶中。
 您可以指定多个hash 列，而且可以使用联合主键，但是一列不能在hash 语句中出现多次。以a,b两列为例子：
+
 * 允许 `hash(a)`, `hash(b)`, hash(a,b)
 * 不允许 hash(a),hash(a,b)
+
 🧡 注意：`partition by hash ` 没有指定具体的列，表示按照主键列 进行散列。
 
 在主键数据均匀的分布在各个域中，而且数据没有呈现出明显的倾斜时， Hash 分区是一种合理的分区方式，例如时间戳和序列ID作为主键时。
@@ -269,10 +276,11 @@ partition by hash partitions 16
 stored as kudu;
 ```
 
-##### Advanced by range
-您可以结合 hash  和 range 两种分区方式去创建复杂的分区 scheme。您可以指定0个或者多个hash 和 0个或者多个 range。每种分区方式都可以包含多个列，列举每一种可能的分区scheme超过了这个文档的范畴，下面将列举一些例子来说明一些可能性。
-###### partiton by hash and range
-考虑到在简单hash的例子中，如果您需要经常 对sku 的范围进行查询，您可以通过结合hash和range 来优化上面的分区方式。
+#### 5.5.3-partiton by hash and range
+这种分区方式是一种 Advanced by range，高级分区的方式
+
+您可以结合 hash  和 range 两种分区方式去创建复杂的分区 scheme。您可以指定0个或者多个hash 和 0个或者多个 range。每种分区方式都可以包含多个列，列举每一种可能的分区scheme超过了这个文档的范畴，下面将列举一些例子来说明一些可能性。考虑到在简单hash的例子中，如果您需要经常 对sku 的范围进行查询，您可以通过结合hash和range 来优化上面的分区方式。
+
 下面的例子中仍然会创建16个tablet ，首先会按照 id 字段散列到4个桶中，然后使用range分区按照sku字段将每个桶划分到4个tablet 中。如此，写压力会负载到至少4个tablet（有可能达到16个），当您进行一个连续的sku范围查询时，您将会有很大的概率只需要查询 四分之一的 tablet。
 🧡： 默认情况下，使用`partition by hash` 主键所有字段将会散列，当需要对主键部分字段散列时，需要特别指定 `partition by hash('id')`
 
@@ -303,7 +311,7 @@ range (sku)
 )
 stored as kudu;
 ```
-###### multiple partition by hash 
+#### 5.5.4-multiple partition by hash 
 继续上面的例子，假设查询模式是不可预测的，而且你希望保证写压力能够负载到尽可能多的tablet上，您可以多对主键列 hash 来实现最大程度的分区。
 ```sql
 create table cust_behavior (
@@ -327,13 +335,14 @@ partition by hash (id) partitions 4,
 stored as kudu;
 ```
 上面的例子中创建了16个tablet ，您也可以使用 `hash (id, sku) partitions 16` ，但是使用这种方式在进行查询时，就会扫描16个tablet ，而不是可能只扫描4个tablet。
-###### 非覆盖范围分区
-kudu 1.0 及更高版本支持使用 非覆盖范围分区，可以为下面这些问题提供解决方案：
+#### 5.5.6-非覆盖范围分区
+==kudu 1.0 及更高版本支持==使用非覆盖范围分区，可以为下面这些问题提供解决方案：
+
 * 在没有非覆盖范围分区情况下，如果是时间序列或者是其他不断递增的主键的scheme ，存储历史数据的tablet将会是固定大小，接受新数据的tablet 将会没有限制的增长
 
 * 如果您想根据种类（例如销售地区，产品类型）来partition 数据，在没有非覆盖范围分区情况下，您必须提前知道所有的这些种类，以及在需要增加或者减少分区（比如增加或者减少产品类型）的时候，您必须重建您的table。
 
-更详细的关于非覆盖范围分区，参考 Scheme Design
+更详细的关于非覆盖范围分区，参考 [Scheme Design](https://kudu.apache.org/docs/schema_design.html)。
 
 下面的例子中对于存储的日志数据，每年会创建一个tablet(一共5个tablet) ,当向表中插入数据时，仅仅接受 2012-2016年的数据，超过range范围的数据将会被拒绝插入。
 ```sql 
@@ -356,14 +365,15 @@ stored as kudu;
 `alter table sales_by_year drop range partition value = 2012;`
 🧡 注意： 就像删除表一样，删除分区的数据也是不可挽回的。所以慎重删除。
 
-###### 关于分区的重要规则
+#### 5.5.7-关于分区的重要规则
 * 对于数据量很大的表，比如事实表，您的tablet （分区）数量应该和kudu集群的内核数保持一致
 * 对于小表，比如维度表，保证每个tablet 至少有1GB大小。
-通常来说，在当前的实现中，需要注意tablet的数量对读的并行性的限制，当tablet的数量超过内核数量过多时，可能会导致受益递减。
 
-### 向 kudu 表中插入数据
+通常来说，在当前的实现中，需要注意tablet的数量对读的并行性的限制，当tablet的数量超过内核数量过多时，可能会导致收益递减。
+
+### 5.6-向 kudu 表中插入数据
 impala允许您使用标准SQL语法向 Kudu中插入数据。
-#### 插入单一数据
+#### 5.6.1-插入单一数据
 这个例子插入了一条数据
 ```sql 
 insert into my_first_table values (99, "sarah");
@@ -373,14 +383,20 @@ insert into my_first_table values (99, "sarah");
 insert into my_first_table values (1, "john"), (2, "jane"), (3, "jim");
 
 ```
-#### 批量插入
+#### 5.6.2-批量插入
 当进行批量插入的时候，最少有三种选择，每一种都有其优点和缺点，具体使用哪种方式取决您的数据和具体的情况。
-##### multiple single insert statement 
+
+:one: multiple single insert statement 
+
 这种方式很好理解和实现，但是这种方式很低效，因为相较于kudu的插入表现，impala 有很高的启动成本，这种方式会导致很高的延迟和有点差劲的吞吐。
-##### single insert statement with multiple values
+
+:two: single insert statement with multiple values
+
 如果您的插入包含了超过1024个value 语句，在给kudu 发送请求之前，impal 会将1024（或者是batch_size）个值打包在一起，这种方式会比单独插入更好，因为摊销了impala启动的成本。您可以通过`set batch_size = 10000` 来设置当前的impala shell session 批量插入的size 。
 🧡 注意：增加batch_size 的值会导致impala使用更多的内存，您应该考虑增加了之后对于集群的影响。
-##### batch insert
+
+:three: batch insert
+
 这种方式通常是表现最好的方式，通常使用 select  from 的方式导入到kudu
 
 *  如果您的数据不在impala 中，一种可选的策略就是从 文本文件 (比如tsv 文件或者 csv文件)中导入到impala
@@ -392,77 +408,86 @@ insert into my_kudu_table
   select * from legacy_data_import_table;
 ```
 
-##### 通过C++/Java API摄取数据
-在很多情形下，通过C++ / Java API 直接向 kudu中插入数据是一种比较合适的方式。通过API插入到kudu 的数据，并不需要并不像Impala 表那样需要 `invalidate metadata` 就可以使用。
-
-#### 插入 和 主键唯一性违规 insert and primary key uniqueness violations
-在大多数关系型数据中，如果您尝试插入一行已经存在的数据，由于唯一性约束您的插入会失败。但是在 kudu + impala 中，会执行插入语句，但是会生成一个告警。
-如果插入的行是为了替代已经存在的行，可以使用 `upsert` 语句 而不是 `insert` 语句，比如下面的例子：
+#### 5.6.3-插入 和 主键唯一性违规 insert and primary key uniqueness violations
+在大多数关系型数据中，如果您尝试插入一行已经存在的数据，由于唯一性约束您的插入会失败。但是在 kudu + impala 中，会执行插入语句，但是会生成一个告警。如果插入的行是为了替代已经存在的行，可以使用 `upsert` 语句 而不是 `insert` 语句，比如下面的例子：
 
 ```sql 
-insert into my_first_table values (99, "sarah");
-upsert into my_first_table values (99, "zoe");
--- the current value of the row is 'zoe'
+create table if not exists tmp.my_first_table
+( id int comment '',
+  name string comment '',
+  primary key(id)
+)stored as kudu tblproperties ('kudu.master_addresses'='cdhkudumaster001:7051,cdhkudumaster002:7051,cdhkudumaster003:7051');
+
+
+insert into tmp.my_first_table values(1,'z3'); -- 表中有一行记录： 1,'z3'
+insert into tmp.my_first_table values(1,'l4'); -- 会产生一个告警，表中的数据仍然为：1,'z3'
+
+upsert into tmp.my_first_table values(1,'l4'); -- 表中有一行记录：1,'l4'
 ```
-### 更新 1 行
+### 5.7.1-更新 1 行
 ```sql
 update my_first_table set name="bob" where id = 3;
 ```
 🧡 注意，`update` 语句只有在impala + kudu 环境下才会生效
-#### 批量更新
+#### 5.7.2-批量更新
 您可以像批量插入那样记性批量更新
 `update my_first_table set name="bob" where age > 10;`
 
-### 删除 1 行
+### 5.8-删除
+
+####  5.8.1-删除1行
+
 `delete from my_first_table where id < 3;`
-你可以使用更复杂的删除语法。from 子句中的 逗号是impala join 查询的一种方式，关于更多的impala join 查询参考  https://impala.apache.org/docs/build/html/topics/impala_joins.html.
+你可以使用更复杂的删除语法。from 子句中的 逗号是impala join 查询的一种方式，关于更多的[impala join](https://impala.apache.org/docs/build/html/topics/impala_joins.html).
 `delete c from my_second_table c, stock_symbols s where c.name = s.symbol;`
 🧡 注意，`delete` 语句只有在impala + kudu 环境下才会生效
 
-#### 批量删除
+#### 5.8.2-批量删除
 您可以像批量插入那样记性批量删除
 `delete from my_first_table where id < 3;`
-### 在执行 `insert、 update、 delete ` 操作时，失败
-`insert、update、delete` 不能作为一个整体性的事务性语句，所以kudu 不能像众多的关系型数据库那样提供事务的支持，如果您需要事务，需要在应用中进行设计。
-### 更改表属性
+
+### 5.9-kudu 不支持事务
+
+在执行 `insert、 update、 delete ` 操作时，失败,`insert、update、delete` 不能作为一个整体性的事务性语句，所以kudu 不能像众多的关系型数据库那样提供事务的支持，如果您需要事务，需要在应用中进行设计。
+
+### 5.10-更改表属性
 您可以通过更改表属性的方式来改变更和kudu表关联的impala元数据信息，包括
 * 表名
 * kudu master 地址
 * 内部或者外部表
-#### impala 映射表 重命名
+#### 5.10.1-impala 映射表 重命名
 `alter table my_table rename to my_new_table`
 🧡 在impala 3.2 或者更低的版本中，使用`alter table ... rename ` 语句只会重命名 impala 映射表，不管这个表是外部表还是内部表。从impala-3.3开始，重命名表名同样会重命名底层的kudu表名
-#### 为一个内部表重命名基础kudu表
+
+#### 5.10.2-为一个内部表重命名基础kudu表
 在 impala-2.11 或者更低的版本中，通过 `kudu.table_name` 属性可以将kudu 基础表重命名：
 ```sql
 alter table my_internal_table
 set tblproperties('kudu.table_name' = 'new_name')
 ```
-#### 重新映射一个外部表和一个不同kudu表
+#### 5.10.3-重新映射一个外部表和一个不同kudu表
 如果另外一个应用在impala下重名了一个kudu表，我们可以重新映射外部表以指向一个不同的kudu表
 ```sql
 alter table my_external_table_
 set tblproperties('kudu.table_name' = 'some_other_kudu_table')
 ```
-#### 变更kudu master 地址
+#### 5.10.4-变更kudu master 地址
 ```sql
 alter table my_table
 set tblproperties('kudu.master_addresses' = 'kudu-new-master.example.com:7051');
 ```
-#### 变更内部表为外部表
+#### 5.10.5变更内部表为外部表
 ```sql
 alter table my_table set tblproperties('external' = 'true');
 ```
-### 使用impala 删除 kudu表
+### 5.11使用impala 删除 kudu表
 如果使用impala创建了一个内部表 `create table` , `drop table`语法会删除表及表中的数据，如果是 `create external table` 创建的外部表，`drop table` 仅仅会删除impala 和 kudu 表之间的映射关系 ，但是 Kudu 表完好无损，包括所有数据。
 `drop table my_first_table;`
 
-
-
-## kudu parper 部分
-### 0.摘要 Abstract
+## 6-kudu parper 部分
+### 6.1-摘要 Abstract
 kudu是一个针对结构化数据的开源存储引擎，支持低延迟的随机访问和高效分析模式。kudu的Raft 支撑的分区和副本机制能够保证低平均恢复时间和低尾部延迟。kudu 和Hadoop生态组件有很好的兼容性，比如使用 spark impala等进行访问。
-### 1.介绍 Introduction
+### 6.2-介绍 Introduction
 主要介绍开发Kudu的目的，介于HDFS存储和HBASE存储之间，HDFS（静态数据集）对变更的数据不友好，HBASE对SQL支持不完善。
 ### 2.Kudu at a high level
 ### 3.Architecture
@@ -471,7 +496,7 @@ kudu是一个针对结构化数据的开源存储引擎，支持低延迟的随�
 
 
 
-## Kudu 扩展指南
+## 7-Kudu 扩展指南
 
 这里会详细的描述Kudu如何扩展各种系统资源，包括内存、文件描述符、线程等。[scaling limits](https://kudu.apache.org/docs/known_issues.html#_scale)  中保存着Kudu 集群相关参数的最大建议值，您可以基于数据量粗略的估计需要配置的参数。
 

@@ -11,3 +11,8 @@
 :five:tech-doc :记录前后端，组件的一些笔记
 
 :six: word-note : 一些按照word 记录的笔记
+
+:seven: translate-doc :  每个周翻译一篇英文原文，目前是这个目标。
+
+
+
