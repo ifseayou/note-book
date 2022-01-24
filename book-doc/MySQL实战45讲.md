@@ -831,6 +831,8 @@ where d.tradeid = l.tradeid -- l表的tradeid 有索引
 
 <img src="./img/myl/23.jpg" width = 80% height = 70% alt="图片名称" align=center />
 
+utf8mb4是支持emoji的，而utf8不支持。
+
 # 19 为什么我只查一行的语句，也执行这么慢？
 
 如果MySQL数据库本身就有很大的压力，导致的数据库的CPU利用率很高或者是 iotil(IO 利用率) 很高，这种情况下所有的语句执行都可能便慢。除了这个原因之外，还有2种情况：
