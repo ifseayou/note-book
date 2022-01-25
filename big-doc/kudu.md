@@ -485,10 +485,12 @@ alter table my_table set tblproperties('external' = 'true');
 `drop table my_first_table;`
 
 ## 6-kudu parper 部分
-### 6.1-摘要 Abstract
-kudu是一个针对结构化数据的开源存储引擎，支持低延迟的随机访问和高效分析模式。kudu的Raft 支撑的分区和副本机制能够保证低平均恢复时间和低尾部延迟。kudu 和Hadoop生态组件有很好的兼容性，比如使用 spark impala等进行访问。
-### 6.2-介绍 Introduction
-主要介绍开发Kudu的目的，介于HDFS存储和HBASE存储之间，HDFS（静态数据集）对变更的数据不友好，HBASE对SQL支持不完善。
+Kudu使用类LSM模型，Scan操作支持谓词下推，在kudu的内部存在timestamp，但是timestamp不会暴露给用户，只用于内部确保数据一致性。
+
+
+
+
+
 ### 2.Kudu at a high level
 ### 3.Architecture
 ### 4.Tablet storage
