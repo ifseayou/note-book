@@ -817,14 +817,14 @@ select * from tradelog where tradeid=110717;
 mysql> select * from tradelog where  CAST(tradid AS signed int) = 110717;
 ```
 
-## 隐士字符编码转换
+## 隐式字符编码转换
 
 表trade_detail 字符集使用utf8; tradelog 表使用 utf8mb4字符集，2个表在做关联Join的时候
 
 ```sql
 select d.*
-from tradelog l
-   , trade_detail d
+from tradelog l -- utf8mb4
+   , trade_detail d -- utf8
 where d.tradeid = l.tradeid -- l表的tradeid 有索引
   and l.id = 2;
 ```
@@ -1413,3 +1413,6 @@ insert into unique_key_test values (3,null,'w5'); -- 插入成功
 
 
 
+
+
+[^另外一个状态是 Query]: 
