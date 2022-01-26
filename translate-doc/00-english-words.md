@@ -37,5 +37,7 @@ Untracked # 未追踪
 unstage # 为暂存 
 
 mercurial # 水银
+
+decoupled # 解耦
 ```
 
