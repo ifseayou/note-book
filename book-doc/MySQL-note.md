@@ -659,8 +659,8 @@ alter table SUser add index index2(email(6)); -- 在 email的前6个字符建立
 
 前缀索引的优势：占用空间更小；前缀索引的劣势：
 
-* 由于[长度定义的不好](前缀索引要选择合适的长度)，导致索引的基数变小，最终导致回表扫描变多。如何选择前缀索引的长度：
 * 无法使用覆盖索引
+* 由于长度定义的不好(前缀索引要选择合适的长度)，导致索引的基数变小，最终导致回表扫描变多。如何选择前缀索引的长度：
 
 ```sql
 select count(distinct left(email, 4)) as L4
@@ -677,6 +677,8 @@ from SUser;
 # 12-为什么我的MySQL会“抖”一下？
 
 一条 SQL 语句，正常执行的时候特别快，但是有时也不知道怎么回事，它就会变得特别慢，并且这样的场景很难复现，它不只随机，而且持续时间还很短。表现出来，就好像MySQL抖了一下。
+
+## 12.1-SQL为什么变慢？
 
 **脏页** ： 当内存数据页跟磁盘数据页内容不一致的时候，我们称这个内存页为“脏页“
 
@@ -700,27 +702,37 @@ from SUser;
 * 使用了而且是干净页
 * 使用了而且是脏页
 
-当读入的数据页没有在内存中时，必须从 buffer pool中申请新页，淘汰则会淘汰最久不使用的数据页，如果是干净页直接释放出来使用，如果是脏页，必须将脏页刷写到磁盘变成干净也才能使用，MySQL刷脏页是一个常态，但是一个查询要淘汰的脏页个数太多时，会导致查询时间加长。
+当读入的数据页没有在内存中时，必须从 buffer pool中申请新页，淘汰则会淘汰最久不使用的数据页，如果是干净页直接释放出来使用，如果是脏页，必须将脏页刷写到磁盘变成干净也才能使用，MySQL刷脏页是一个常态，但是一个查询要淘汰的脏页个数太多时，会导致查询时间加长。从而导致MySQL抖动了一下。
 
-[`InnoDB`刷脏页的控制策略 待更]()。
+## 12.2-InnoDB`刷脏页的控制策略
+
+InnoDB使用innodb_io_capacity[^38]，告知InnoDB所在的主机的IO能力，这样InnoDB才能最大发挥磁盘IOPS的能力。当前的这个参数是最大的写磁盘的能力，还需要$ innodb\_io\_capacity * R \% $ [^39]InnoDB的刷盘速度实际参考2个因素：
+
+* 脏页比例
+* redo log 写盘速度
+
+
+
+[^38]: 建议设置为磁盘的IOPS
+[^39]: R% 如何计算，参考：https://time.geekbang.org/column/article/71806
 
 # 13-为什么表数据删掉一半，表文件大小不变？
 
-MySQL在进行数据删除的时候，会将数据页标记为可复用，实际上并不会进行删除，会造成空洞；如果主键不是依次递增的，插入数据会导致页分裂，会导致页空洞，更新数据可以认为是先删除在插入，也会导致页分裂。如果把这些空洞去掉，就可以达到收缩表空间的目的。而重建表，就可以达到这样的目的。
+MySQL在进行数据删除的时候，会将数据页标记为可复用，实际上并不会进行删除，会形成空洞；如果主键不是依次递增的，插入数据会导致页分裂，会导致页空洞，更新数据可以认为是先删除在插入，也会导致页分裂。如果把这些空洞去掉，就可以达到收缩表空间的目的。而重建表，就可以达到这样的目的。
 
 左图：MySQL5.5 | 右图： MySQL5.6
 
-<img src="./img/myl/19.jpg" width = 90% height = 70% alt="图片名称" align=center />
+<img src="./img/myl/19.jpg" width = 90% height = 70% alt="图片名称" align=center /> 
 
 
 
 # 14-count(*)这么慢，我该怎么办？
 
-[普通索引树比主键索引树小很多](主键索引树的叶子节点是数据，而普通索引树的叶子节点是主键值)，对于count(*) 这样的操作，遍历哪个索引树得到的结果逻辑上是一致的，MySQL优化器会找到最小的那棵树来遍历，**在保证逻辑正确的前提下，尽量减少扫描的数据量，是数据库系统涉及的通用法则之一**。
+普通索引树比主键索引树小很多[^40]，对于count(*) 这样的操作，遍历哪个索引树得到的结果逻辑上是一致的，MySQL优化器会找到最小的那棵树来遍历，**在保证逻辑正确的前提下，尽量减少扫描的数据量，是数据库系统涉及的通用法则之一**。
 
-InnoDB 表直接` count(*)` 会遍历全表，虽然结果准确，但会导致[性能问题](全表扫描会导致所导致的性能问题)。可以考虑使用外部存储的方式来存储`count(*)`,比如redis。不能够保证计数和 MySQL 表里的数据精确一致的原因，是这两个不同的存储构成的系统，不支持分布式事务，无法拿到精确一致的视图。
+InnoDB 表直接` count(*)` 会遍历全表，虽然结果准确，但会导致性能问题(全表扫描会导致所导致的性能问题)。可以考虑使用外部存储的方式来存储`count(*)`,比如redis。不能够保证计数和 MySQL 表里的数据精确一致的原因，是这两个不同的存储构成的系统，不支持分布式事务，无法拿到精确一致的视图。
 
-## count(?) 的用法
+## 14.1-count(?) 的用法
 
 至于分析性能差别的时候，你可以记住这么几个原则：
 
@@ -743,6 +755,8 @@ InnoDB 表直接` count(*)` 会遍历全表，虽然结果准确，但会导致[
 
 
 
+[^40]: 主键索引树的叶子节点是数据，而普通索引树的叶子节点是主键值
+
 # 15-答疑文章（一）：日志和索引相关问题
 
 redo log buffer 就是一块内存，用来先存 redo 日志的。可以认为WAL和redo log 是一个东西。
@@ -755,11 +769,11 @@ redo log buffer 就是一块内存，用来先存 redo 日志的。可以认为W
 select city,name,age from t where city='杭州' order by name limit 1000  ; -- id是主键， city上有索引
 ```
 
-## 全字段排序
+## 16.1-全字段排序
 
-<img src="./img/myl/20.jpg" width = 90% height = 70% alt="图片名称" align=center />
+<img src="./img/myl/20.jpg" width = 90% height = 70% alt="图片名称" align=center /> 
 
-:one: 初始化 [sort buffer](), 确定放入 name,city,age 3个字段；
+:one: 初始化 [sort buffer], 确定放入 name,city,age 3个字段；
 
 :two: 根据 city 的索引树，找到第一个满足 city = '杭州' 的主键id 
 
@@ -773,7 +787,7 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 
 :seven: 取前1000行返回给客户端
 
-## row_id 排序
+## 16.2-row_id 排序
 
 <img src="./img/myl/21.jpg" width = 90% height = 70% alt="图片名称" align=center />
 
@@ -791,7 +805,7 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 
 :seven: 遍历排序结果，取前 1000 行，并按照 id 的值回到原表中取出 city、name 和 age 三个字段返回给客户端。
 
-## 联合索引
+## 16.3-联合索引
 
 执行如下语句：`alter table t add index city_user(city, name);` 
 
@@ -838,7 +852,7 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 
 对索引字段做函数操作，可能会破坏索引值的有序性，因此优化器就决定放弃走树搜索功能。比如，你在 `t_modified` 、`id`上建立索引，却产生了下面的SQL写法：`where month(t_modified)  = 7` 或者 `where id - 1 = 100`  
 
-## 隐式类型转换
+## 18.1-隐式类型转换
 
 首先，**在MySQL、PostgreSQL、 Hive 中，字符串类型和数字类型比较的时候，都是将字符串转为数字比较**，验证方法如下：
 
@@ -857,7 +871,7 @@ select * from tradelog where tradeid=110717;
 mysql> select * from tradelog where  CAST(tradid AS signed int) = 110717;
 ```
 
-## 隐式字符编码转换
+## 18.2-隐式字符编码转换
 
 表trade_detail 字符集使用utf8; tradelog 表使用 utf8mb4字符集，2个表在做关联Join的时候
 
@@ -877,7 +891,7 @@ utf8mb4是支持emoji的，而utf8不支持。
 
 如果MySQL数据库本身就有很大的压力，导致的数据库的CPU利用率很高或者是 iotil(IO 利用率) 很高，这种情况下所有的语句执行都可能便慢。除了这个原因之外，还有2种情况：
 
-## 一： 查询长时间不返回
+## 19.1-查询长时间不返回
 
 这种情况下，有2种原因导致，遇到这种情况，具体可以参考 [链接](https://time.geekbang.org/column/article/74687)
 
@@ -899,13 +913,13 @@ select *
 from mysql.slow_log; -- 记录慢查询可以记录到表中，也可以记录到文件中，如果记录到表中，可以按照当前的方式查询
 ```
 
-## 二：查询慢
+## 19.2-查询慢
 
 :one: 全表扫描， 从SQL上来说，我们应该避免全表扫描
 
 :two: 当前读 ： 对于`select * from t where id = 1; -- 10w记录，id是主键，从查询返回来看返回结果很慢`  
 
-<img src="./img/myl/25.jpg" width = 80% height = 70% alt="图片名称" align=center />
+<img src="./img/myl/25.jpg" width = 90% height = 70% alt="图片名称" align=center /> 
 
 # 20-幻读是什么，幻读有什么问题？
 
@@ -922,7 +936,7 @@ insert into t values(0,0,0),(5,5,5),
 (10,10,10),(15,15,15),(20,20,20),(25,25,25);
 ```
 
-<img src="./img/myl/26.jpg" width = 60% height = 70% alt="图片名称" align=center />
+<img src="./img/myl/26.jpg" width = 60% height = 70% alt="图片名称" align=center /> 
 
 幻读说明：
 
@@ -1021,7 +1035,7 @@ call query_rewrite.flush_rewrite_rules();
 
 > **只要redo log 和binlog 写入了磁盘，就能确保MySQL异常重启后，数据可以恢复。**
 
-<img src="./img/myl/30.jpg" width = 60% height = 70% alt="图片名称" align=center />
+<img src="./img/myl/30.jpg" width = 70% height = 70% alt="图片名称" align=center /> 
 
 :one: 事务执行过程中，先把日志写入到binlog cache ，事务提交的时候，再把binlog cache写入到binlog 文件中，并清空binlog cache
 
