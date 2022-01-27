@@ -706,7 +706,7 @@ from SUser;
 
 ## 12.2-`InnoDB`刷脏页的控制策略
 
-InnoDB使用innodb_io_capacity[^38]，告知InnoDB所在的主机的IO能力，这样InnoDB才能最大发挥磁盘IOPS的能力。当前的这个参数是最大的写磁盘的能力，还需要$ innodb\_io\_capacity * R \% $ [^39]InnoDB的刷盘速度实际参考2个因素：
+InnoDB使用innodb_io_capacity[^38]，告知InnoDB所在的主机的IO能力，这样InnoDB才能最大发挥磁盘IOPS的能力。当前的这个参数是最大的写磁盘的能力，还需要$innodb\_io\_capacity \times R \%$ [^39]InnoDB的刷盘速度实际参考2个因素：
 
 * 脏页比例
 * redo log 写盘速度
