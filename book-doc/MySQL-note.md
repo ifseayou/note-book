@@ -1,4 +1,4 @@
-# MySQL实战45讲
+MySQL实战45讲
 
 :a: 本文内容来源于极客时间专栏：[《MySQL 实战45讲》](https://time.geekbang.org/column/intro/100020801)
 
@@ -507,7 +507,7 @@ MySQL 的行锁是在引擎层面实现的，InnoDB支持行锁，MyISAM不支�
 
 我们再来分析一下事务B的update 逻辑，按照上述的一致性读逻辑，事务B，是不能读到事务C的(1,2)的，因为事务C的是在事务B的一致性视图生成后提交的，按理说不可见；视图B在更新前去查询一次数据，返回的K=1，但是当更新的时候，必须拿到最新的值（1,2），否则事务C的更新就丢失了，因此更新数据涉及到一条规则：
 
-> **当前读：更新数据是先读后写的，读只能读当前的值，这个读 称之为当前读**
+> **当前读：更新数据是先读后写的，读只能读当前已提交的最新值，这个读 称之为当前读**
 
 因此，事务B查询结果 是 (1,3)。
 
@@ -704,7 +704,7 @@ from SUser;
 
 当读入的数据页没有在内存中时，必须从 buffer pool中申请新页，淘汰则会淘汰最久不使用的数据页，如果是干净页直接释放出来使用，如果是脏页，必须将脏页刷写到磁盘变成干净也才能使用，MySQL刷脏页是一个常态，但是一个查询要淘汰的脏页个数太多时，会导致查询时间加长。从而导致MySQL抖动了一下。
 
-## 12.2-InnoDB`刷脏页的控制策略
+## 12.2-`InnoDB`刷脏页的控制策略
 
 InnoDB使用innodb_io_capacity[^38]，告知InnoDB所在的主机的IO能力，这样InnoDB才能最大发挥磁盘IOPS的能力。当前的这个参数是最大的写磁盘的能力，还需要$ innodb\_io\_capacity * R \% $ [^39]InnoDB的刷盘速度实际参考2个因素：
 
@@ -773,7 +773,7 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 
 <img src="./img/myl/20.jpg" width = 90% height = 70% alt="图片名称" align=center /> 
 
-:one: 初始化 [sort buffer], 确定放入 name,city,age 3个字段；
+:one: 初始化 sort buffer[^41], 确定放入 name,city,age 3个字段；
 
 :two: 根据 city 的索引树，找到第一个满足 city = '杭州' 的主键id 
 
@@ -783,7 +783,7 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 
 :five: 重复3,4 直到不满足查询条件为止
 
-:six: 对 sort buffer 中的数据按照name 做 快排 [sort_buffer_size](当前参数的大小决定排序是基于内存还是开辟磁盘空间，使用归并排序)
+:six: 对 sort buffer 中的数据按照name 做 快排 sort_buffer_size[^42]
 
 :seven: 取前1000行返回给客户端
 
@@ -791,9 +791,9 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 
 <img src="./img/myl/21.jpg" width = 90% height = 70% alt="图片名称" align=center />
 
-:one: 初始化 sort_buffer，确定放入两个字段，即 name 和 id；
+:one: 初始化 sort_buffer[^41]，确定放入两个字段，即 name 和 id；
 
-:two: 从索引 city 找到第一个满足 city='杭州’条件的主键 id，也就是图中的 ID_X；
+:two: 从索引 city 找到第一个满足 city='杭州’ 条件的主键 id，也就是图中的 ID_X；
 
 :three: 到主键 id 索引取出整行，取 name、id 这两个字段，存入 sort_buffer 中；
 
@@ -801,7 +801,7 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 
 :five: 重复步骤 3、4 直到不满足 city='杭州’条件为止，也就是图中的 ID_Y；
 
-:six: 对 sort_buffer 中的数据按照字段 name 进行排序 , [max_length_for_sort_data](设置该参数，对于太长的字段，可以实现只是取排序字段  和主键 排序，select的字段通过回表的方式获取)；
+:six: 对 sort_buffer 中的数据按照字段 name 进行排序 , max_length_for_sort_data[^43]；
 
 :seven: 遍历排序结果，取前 1000 行，并按照 id 的值回到原表中取出 city、name 和 age 三个字段返回给客户端。
 
@@ -821,6 +821,14 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 
 当然我们可以进一步在 `city name age` 3个字段上建立索引，然后当前的查询就会索引覆盖，更快。
 
+
+
+[^41]:  sor_buffer 是MySQL用于排序的一个缓冲
+[^42]: 当前参数的大小决定排序是基于内存的快排，还是开辟磁盘空间，使用归并排序
+[^43]: 设置该参数，对于太长的字段，可以实现只是取排序字段  和主键 排序，select的字段通过回表的方式获取
+
+
+
 # 17-如何正确的显示随机消息
 
 对于需求：从单词表中随机选出3个单词，`select word from words order by rand() limit 3;` 测试插入10W条记录，本章使用了
@@ -828,9 +836,7 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 * 内存临时表 -> 按照row id 的方式进行排序
 * 磁盘临时表 -> 优先队列排序算法，生成一个大根堆，完成排序
 
-
-
-然后介绍了一种随机1排序的方法：
+然后介绍了一种*随机1排序*的方法：
 
 :one: 取得这个表的主键 id 的最大值 M 和最小值 N;
 
@@ -838,7 +844,7 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 
 :three: 取不小于 X 的第一个 ID 的行。
 
-最后又介绍了一种随机2的排序方法：
+最后又介绍了一种*随机2排序*方法：
 
 :one: 取得整个表的行数，并记为 C。
 
@@ -846,13 +852,15 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 
 :three: 再用 limit Y,1 取得一行。
 
+
+
 # 18-为什么我的这些SQL语句逻辑相同，性能确差异巨大？
 
-## 条件字段函数操作
+## 18.1-条件字段函数操作
 
-对索引字段做函数操作，可能会破坏索引值的有序性，因此优化器就决定放弃走树搜索功能。比如，你在 `t_modified` 、`id`上建立索引，却产生了下面的SQL写法：`where month(t_modified)  = 7` 或者 `where id - 1 = 100`  
+对索引字段做函数操作，可能会破坏索引值的有序性，因此优化器就决定放弃走树搜索功能。比如，你在 `t_modified` 、`id`上建立索引，却产生了下面的SQL写法：`where month(t_modified)  = 7` 或者 `where id - 1 = 100` 。
 
-## 18.1-隐式类型转换
+## 18.2-隐式类型转换
 
 首先，**在MySQL、PostgreSQL、 Hive 中，字符串类型和数字类型比较的时候，都是将字符串转为数字比较**，验证方法如下：
 
@@ -871,9 +879,9 @@ select * from tradelog where tradeid=110717;
 mysql> select * from tradelog where  CAST(tradid AS signed int) = 110717;
 ```
 
-## 18.2-隐式字符编码转换
+## 18.3-隐式字符编码转换
 
-表trade_detail 字符集使用utf8; tradelog 表使用 utf8mb4字符集，2个表在做关联Join的时候
+表trade_detail 字符集使用utf8; tradelog 表使用 utf8mb4[^44]字符集，2个表在做关联Join的时候
 
 ```sql
 select d.*
@@ -883,19 +891,21 @@ where d.tradeid = l.tradeid -- l表的tradeid 有索引
   and l.id = 2;
 ```
 
-<img src="./img/myl/23.jpg" width = 80% height = 70% alt="图片名称" align=center />
+<img src="./img/myl/23.jpg" width = 90% height = 70% alt="图片名称" align=center /> 
 
-utf8mb4是支持emoji的，而utf8不支持。
+[^44]: utf8mb4是支持emoji的，而utf8不支持。utf8mb4是utf8的超集。
+
+
 
 # 19-为什么我只查一行的语句，也执行这么慢？
 
-如果MySQL数据库本身就有很大的压力，导致的数据库的CPU利用率很高或者是 iotil(IO 利用率) 很高，这种情况下所有的语句执行都可能便慢。除了这个原因之外，还有2种情况：
+如果MySQL数据库本身就有很大的压力，导致数据库的CPU利用率很高或者是 ioutil(IO 利用率) 很高，这种情况下所有的语句执行都可能变慢。除了这个原因之外，还有另外2种情况：
 
 ## 19.1-查询长时间不返回
 
-这种情况下，有2种原因导致，遇到这种情况，具体可以参考 [链接](https://time.geekbang.org/column/article/74687)
+这种情况下，有2种原因导致，遇到这种情况，详细分析可以参考 [链接](https://time.geekbang.org/column/article/74687)
 
-:one:  等 DML锁，通过[sys.schema_table_lock_waits](`select blocking_pid from sys.schema_table_lock_waits`)表可以定位到哪个 process id 造成了阻塞
+:one:  等 DML锁，通过[sys.schema_table_lock_waits[^45]表可以定位到哪个 process id 造成了阻塞
 
 :two:  等flush， flush table 是很快的，出现 waiting for table flush 状态的情况可能是,有一个flush tables  命令被别的语句阻塞了，然后flush table 又阻塞了我们的select 语句。
 
@@ -917,20 +927,28 @@ from mysql.slow_log; -- 记录慢查询可以记录到表中，也可以记录�
 
 :one: 全表扫描， 从SQL上来说，我们应该避免全表扫描
 
-:two: 当前读 ： 对于`select * from t where id = 1; -- 10w记录，id是主键，从查询返回来看返回结果很慢`  
+:two: 时间消耗在unlog回滚上 ： 
+
+对于`select * from t where id = 1; -- 10w记录，id是主键，从查询返回来看返回结果很慢`  
 
 <img src="./img/myl/25.jpg" width = 90% height = 70% alt="图片名称" align=center /> 
+
+当前读可以很快的读取到数据；而一致性读需要相当的响应时间。
+
+
+
+[^45]: select blocking_pid from sys.schema_table_lock_waits
 
 # 20-幻读是什么，幻读有什么问题？
 
 ```sql
-CREATE TABLE `t` (
-  `id` int(11) NOT NULL,
-  `c` int(11) DEFAULT NULL,
-  `d` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `c` (`c`)
-) ENGINE=InnoDB;
+create table `t` (
+  `id` int(11) not null,
+  `c` int(11) default null,
+  `d` int(11) default null,
+  primary key (`id`),
+  key `c` (`c`)
+) engine=innodb;
 
 insert into t values(0,0,0),(5,5,5),
 (10,10,10),(15,15,15),(20,20,20),(25,25,25);
@@ -940,34 +958,46 @@ insert into t values(0,0,0),(5,5,5),
 
 幻读说明：
 
-:one: 在可重复读隔离级别下，普通的查询是快照读，是不会看到别的事务插入的数据的。因此，幻读在“当前读”下才会出现。
+:one: 在可重复读隔离级别下，普通的查询是快照读，是不会看到别的事务插入的数据的。因此，**幻读在“当前读”下才会出现**。
 
-:two: 下面 session B 的修改结果，被 session A 之后的 select 语句用“当前读”看到，不能称为幻读。幻读仅专指“新插入的行”。
+:two: 上面 session B 的修改结果，被 session A 之后的 select 语句用“当前读”看到，不能称为幻读。**幻读仅专指“新插入的行”**。
 
 幻读会导致：
 
-* 破坏语义
-* 破坏数据一致性
+:a: 破坏语义。 如上例中T1语义就是对所有d=5的行都加上:lock:,SessionB的T2语句更新id=0后，还可以修改id=0的字段值，破坏了SessionA中T1定义的对所有d=5的行加:lock:的逻辑。
 
-## 间隙锁
+:b: 破坏数据一致性[^46]，详细的原因：[点击这里](https://time.geekbang.org/column/article/75173)
 
-行锁只能锁住行，但是新插入记录的动作要更新的是记录之间的**“间隙” **， 为了解决幻读的方式是MySQL引入了 **[间隙锁](Gap Lock)**。  
+## 20.1-间隙锁
 
-<img src="./img/myl/27.jpg" width = 60% height = 70% alt="图片名称" align=center />
+行锁只能锁住行，但是新插入记录的动作要更新的是记录之间的**“间隙” **， 为了解决幻读问题，MySQL引入了 **间隙锁[^47]**。  
 
-跟行锁有冲突关系的是“另外一个行锁”。但是间隙锁不一样，跟间隙锁存在冲突关系的，是“往这个间隙中插入一个记录”这个操作。间隙锁之间都不存在冲突关系。
+<img src="./img/myl/27.jpg" width = 80% height = 70% alt="图片名称" align=center /> 
 
-<img src="./img/myl/28.jpg" width = 60% height = 70% alt="图片名称" align=center />
+**跟行锁有冲突关系的是“另外一个行锁”**。但是间隙锁不一样，**跟间隙锁存在冲突关系的，是“往这个间隙中插入一个记录”这个操作**。间隙锁之间都不存在冲突关系。
 
-间隙锁和行锁合称 next-key lock，**每个 next-key lock 是前开后闭区间**。也就是说，我们的表 t 初始化以后，如果用 `select * from t for update` 要把整个表所有记录锁起来，就形成了 7 个 next-key lock，分别是 (-∞,0]、(0,5]、(5,10]、(10,15]、(15,20]、(20, 25]、(25, [+supremum](InnoDB 给每个索引加了一个不存在的最大值 supremum，这样才符合我们前面说的“都是前开后闭区间)]。
+<img src="./img/myl/28.jpg" width = 80% height = 70% alt="图片名称" align=center /> 
 
-右图是一个间隙锁导致的死锁例子：<img src="./img/myl/29.jpg" width = 60% height = 70% alt="图片名称" align=center />
+间隙锁和行锁合称 next-key lock，**每个 next-key lock 是前开后闭区间**。也就是说，我们的表 t 初始化以后，如果用 `select * from t for update` 要把整个表所有记录锁起来，就形成了 7 个 next-key lock，分别是
+$$
+(-\infty,0]、(0,5]、(5,10]、(10,15]、(15,20]、(20,25],(25,+\infty)
+$$
+下图是一个间隙锁导致的死锁例子：
 
-可以发现间隙锁的引入，可能会导致同样的语句锁住更大的范围，这其实是影响了并发度的。**只有在可重复读的隔离级别下，才会有间隙锁。读提交的隔离级别下不会有间隙锁**
+<img src="./img/myl/29.jpg" width = 80% height = 70% alt="图片名称" align=center /> 
+
+可以发现间隙锁的引入，可能会导致同样的语句锁住更大的范围，这其实是影响了并发度的。==**只有在可重复读的隔离级别下，才会有间隙锁。读提交的隔离级别下不会有间隙锁**。==
+
+
+
+[^46]: 锁的设计是为了保证数据的一致性。而这个一致性，不止是数据库内部数据状态在此刻的一致性，还包含了数据和日志在逻辑上的一致性
+[^47]: Gap Lock
+
+
 
 # 21-为什么我只改一行的语句，锁这么多？
 
-隔离级别：RR；间隙锁和 next-key lock的加锁规则：
+隔离级别：==RR==；间隙锁和 next-key lock的加锁规则：
 
 :one: 原则 1：加锁的基本单位是 next-key lock，next-key lock 是前开后闭区间。
 
@@ -979,26 +1009,26 @@ insert into t values(0,0,0),(5,5,5),
 
 :five:一个 bug：唯一索引上的范围查询会访问到不满足条件的第一个值为止。
 
-具体案例[移步](https://time.geekbang.org/column/article/75659). 本篇文章真TM复杂！！！
+具体案例[移步](https://time.geekbang.org/column/article/75659)
 
 # 22-MySQL有哪些“饮鸩止渴”提高性能的方法？
 
-下面这些优化的方式都是有损的。
+:bulb: 下面这些优化的方式都是有损的。
 
-## 短链接风暴 
+## 22.1-短链接风暴 
 
 连接过程涉及TCP+鉴权等会占用CPU资源。
 
-:one: 第一种方法：先处理掉那些占着连接但是不工作的线程。[`kill connection + id `的命令](select * from information_schema.innodb_trx; 查找处于事务中的id)， 一个客户端处于 sleep 状态时，它的连接被服务端主动断开后，这个客户端并不会马上知道
+:one: 第一种方法：先处理掉那些占着连接但是不工作的线程。`kill connection + id `的命令[^48]， 一个客户端处于 sleep 状态时，它的连接被服务端主动断开后，这个客户端并不会马上知道
 
  :two: 第二种方法：减少连接过程的消耗。重启数据库，并使用–skip-grant-tables 参数启动。风险很高
 
-## 慢查询性能问题
+## 22.2-慢查询性能问题
 
 引发性能的情况有三种：
 
 * 索引没有设计好； 可以Online DDL
-* SQL 语句没写好；参见文章 18 为什么这些SQL语句逻辑相同，性能差异确巨大
+* SQL 语句没写好；参见[章节 18](#18-为什么我的这些SQL语句逻辑相同，性能确差异巨大？) 为什么这些SQL语句逻辑相同，性能差异确巨大
 * MySQL 选错了索引。应急方案 force index
 
 如何避免情况1和情况2？
@@ -1009,7 +1039,7 @@ insert into t values(0,0,0),(5,5,5),
 
 :three: 观察慢查询日志里每类语句的输出，特别留意 Rows_examined 字段是否与预期一致。
 
-不要吝啬这段花在上线前的“额外”时间，因为这会帮你省下很多故障复盘的时间。
+不要吝啬这段花在上线前的“额外”时间，因为这会帮你省下很多故障排除的时间。
 
 **查询重写**：
 
@@ -1019,62 +1049,68 @@ insert into query_rewrite.rewrite_rules(pattern, replacement, pattern_database) 
 call query_rewrite.flush_rewrite_rules();
 ```
 
+## 22.3-QPS 突增问题
 
+有时由于业务突然出现高峰，或者应用程序 bug，导致某个语句的 QPS 突然暴涨，也可能导致 MySQL 压力过大，影响服务。[详情移步](https://time.geekbang.org/column/article/75746)
 
-## QPS 突增问题
-
-有时候由于业务突然出现高峰，或者应用程序 bug，导致某个语句的 QPS 突然暴涨，也可能导致 MySQL 压力过大，影响服务。
-
-[移步](https://time.geekbang.org/column/article/75746)
+[^48]: select * from information_schema.innodb_trx; 查找处于事务中的id
 
 # 23-MySQL是怎么保证数据不丢的？
 
-关于数据可靠性,也即持久性。
+关于数据可靠性,也即持久性的。
 
-## binlog 写入机制
+## 23.1-binlog 写入机制
 
 > **只要redo log 和binlog 写入了磁盘，就能确保MySQL异常重启后，数据可以恢复。**
 
-<img src="./img/myl/30.jpg" width = 70% height = 70% alt="图片名称" align=center /> 
+<img src="./img/myl/30.jpg" width = 85% height = 70% alt="图片名称" align=center /> 
 
 :one: 事务执行过程中，先把日志写入到binlog cache ，事务提交的时候，再把binlog cache写入到binlog 文件中，并清空binlog cache
 
-:two: 系统给 binlog cache 分配了一片内存，每个线程会按照参数[binlog_cache_size]() 的大小获取自己享有的cache大小，如果不够用就暂存到磁盘。
+:two: 系统给 binlog cache 分配了一片内存，每个线程会按照参数**binlog_cache_size** 的大小获取自己享有的cache大小，如果不够用就暂存到磁盘。
 
 write 和 fsync 的时机，是由参数 sync_binlog 控制的：
 
 * sync_binlog=0 的时候，表示每次提交事务都只 write，不 fsync；
 * sync_binlog=1 的时候，表示每次提交事务都会执行 fsync；
-* sync_binlog=N(N>1) 的时候，[表示每次提交事务都 write，但累积 N 个事务后才 fsync](对应的风险是：如果主机发生异常重启，会丢失最近 N 个事务的 binlog 日志)。
+* sync_binlog=N(N>1) 的时候，表示每次提交事务都 write，但累积 N 个事务后才 fsync[^49]。
 
-将 sync_binlog 设置成一个比较大的值，可以提升性能。在实际的业务场景中，比较常见的是将其设置为 100~1000 中的某个数值
+将 sync_binlog 设置成一个比较大的值，可以提升性能。在实际的业务场景中，比较常见的是将其设置为 100~1000 中的某个数值。
 
-## redo log 的写入机制
+## 23.2-redo log 的写入机制
 
-redo log 3种存储状态  <img src="./img/myl/31.jpg" width = 60% height = 70% alt="图片名称" align=center />
+redo log 3种存储状态  
 
-InnoDB 提供了 innodb_flush_log_at_trx_commit 参数 来控制 redo log 的写入策略：
+<img src="./img/myl/31.jpg" width = 80% height = 70% alt="图片名称" align=center /> 
 
-* 设置为 0 的时候，表示每次事务提交时都只是把 redo log 留在 redo log buffer 中 ;
-* 设置为 1 的时候，表示每次事务提交时都将 redo log 直接持久化到磁盘；
-* 设置为 2 的时候，表示每次事务提交时都只是把 redo log 写到 page cache。
+InnoDB 提供了 innodb_flush_log_at_trx_commit 参数来控制 redo log 的写入策略：
 
-[InnoDB 有一个后台线程，每隔 1 秒，就会把 redo log buffer 中的日志，调用 write 写到文件系统的 page cache，然后调用 fsync 持久化到磁盘](所以一个正在执行的事务产生的redo log 也是直接写到 redo  log buffer 的，即一个未被提交的事务也有可能持久化到磁盘)。此外还有2种情况也会写盘：
+:one: 设置为 0 的时候，表示每次事务提交时都只是把 redo log 留在 redo log buffer 中 ;
 
-* redo log buffer 占用的空间即将达到 innodb_log_buffer_size 一半的时候，[后台线程会主动写盘](只是write 不 fsync)
+:two: 设置为 1 的时候，表示每次事务提交时都将 redo log 直接持久化到磁盘；
+
+:three: 设置为 2 的时候，表示每次事务提交时都只是把 redo log 写到 page cache。
+
+InnoDB 有一个后台线程，每隔 1 秒，就会把 redo log buffer 中的日志，调用 write 写到文件系统的 page cache，然后调用 fsync 持久化到磁盘[^50]。此外还有2种情况也会写盘：
+
+* redo log buffer 占用的空间即将达到 innodb_log_buffer_size 一半的时候，后台线程会主动写盘(只是write 不 fsync)
 * 并行事务提交时，顺带将这个事务的redo log buffer 持久化到磁盘
 
-**[日志逻辑序列号](log sequence number，LSN)** : 是单调递增的，用来对应 redo log 的一个个写入点。每次写入长度为 length 的 redo log， LSN 的值就会加上 length。
+**日志逻辑序列号[^51]** : 是单调递增的，用来对应 redo log 的一个个写入点。每次写入长度为 length 的 redo log， LSN 的值就会加上 length。
 
 **[组提交]()**
 
 todo : 部分内容没有做总结
 
-# 24 | MySQL是怎么保证主备一致的？
+[^49]:对应的风险是：如果主机发生异常重启，会丢失最近 N 个事务的 binlog 日志
+[^50]: 一个正在执行的事务产生的redo log 也是直接写到 redo  log buffer 的，即一个未被提交的事务也有可能持久化到磁盘
+[^51]: log sequence number，LSN
 
-## MySQL 主备的基本原理
+# 24-MySQL是怎么保证主备一致的？
 
-左图为[主备切换流程](M-S架构)，右图为节点 A 到 B 这条线的内部流程是什么样的。
+## 24.1-MySQL 主备的基本原理
+
+左图为主备切换流程(M-S架构)，右图为节点 A 到 B 这条线的内部流程是什么样的。
 
 <img src="./img/myl/32.jpg" width = 90% height = 80% alt="图片名称" align=center /> 
 
@@ -1090,7 +1126,7 @@ todo : 部分内容没有做总结
 
 :five: sql_thread 读取中转日志，解析出日志里的命令，并执行。
 
-## binlog 的三种格式对比
+## 24.2-binlog 的三种格式对比
 
 * statement
 
@@ -1099,19 +1135,19 @@ todo : 部分内容没有做总结
 
 row 格式使用 mysqlbinlog工具解析出来的结果：
 
-<img src="./img/myl/33.jpg" width = 90% height = 80% alt="图片名称" align=center />
+<img src="./img/myl/33.jpg" width = 90% height = 80% alt="图片名称" align=center /> 
 
 越来越多的场景要求把 MySQL 的 binlog 格式设置成 row。其中一个直接看出来的好处：**恢复数据**
 
-M-M架构 
+## 24.3-M-M架构 
 
 <img src="./img/myl/34.jpg" width = 70% height = 80% alt="图片名称" align=center /> 
 
 
 
-# 25 | MySQL是怎么保证高可用的？
+# 25-MySQL是怎么保证高可用的？
 
-## 主备延迟
+## 25.1-主备延迟
 
 和数据同步有关的时间点主要包括以下三个：
 
@@ -1139,13 +1175,9 @@ M-M架构
 
 ### 可用性优先策略
 
-
-
 还介绍了异常切换的情况。
 
-
-
-# 26 | 备库为什么会延迟好几个小时？
+# 26-备库为什么会延迟好几个小时？
 
 主要介绍：备库并行复制能力。MySQL5.6之前备库的复制时单线程的。为什么要有多线程复制呢？这是因为单线程复制的能力全面低于多线程复制，对于更新压力较大的主库，备库是可能一直追不上主库的。从而导致备库上 seconds_behind_master 的值越来越大。
 
@@ -1158,7 +1190,7 @@ coordinator 在分发的时候，需要满足以下这两个基本要求：
 
 todo:待更
 
-# 27 | 主库出问题了，从库怎么办？
+# 27-主库出问题了，从库怎么办？
 
 大多数的互联网应用场景都是读多写少,在发展过程中很可能先会遇到读性能的问题。而在数据库层解决读性能问题，就要涉及到接下来两篇文章要讨论的架构,一主多从。（前3章是一主一备）
 
@@ -1175,7 +1207,7 @@ todo:待更
 
 
 
-# 28 | 读写分离有哪些坑？
+# 28-读写分离有哪些坑？
 
 自定义的[过期读](在从库上会读到系统的一个过期状态”的现象，在这篇文章里，我们暂且称之为“过期读”) 。 涉及到的处理过期读的方案如下：
 
@@ -1191,11 +1223,11 @@ todo:待更
 
 :six: 等 GTID 方案。
 
-# 29 | 如何判断一个数据库是不是出问题了？
+# 29-如何判断一个数据库是不是出问题了？
 
-# 30 | 答疑文章（二）：用动态的观点看加锁
+# 30-答疑文章（二）：用动态的观点看加锁
 
-# 31 | 误删数据后除了跑路，还能怎么办？
+# 31-误删数据后除了跑路，还能怎么办？
 
 误删数据的事后处理办法要说，更重要是要做到事前预防误删数据，下面是2个建议：
 
@@ -1207,9 +1239,9 @@ todo:待更
 * 第一条建议是，账号分离
 * 第二条建议是：[制定操作规范。这样做的目的，是避免写错要删除的表名。](比如：在删除数据表之前，必须先对表做改名操作。然后，观察一段时间，确保对业务无影响以后再删除这张表。改表名的时候，要求给表名加固定的后缀比如加 _to_be_deleted ，然后删除表的动作必须通过管理系统执行。并且，管理系删除表的时候，只能删除固定后缀的表)。
 
-# 32 | 为什么还有kill不掉的语句？
+# 32-为什么还有kill不掉的语句？
 
-# 33 | 我查这么多数据，会不会把数据库内存打爆？
+# 33-我查这么多数据，会不会把数据库内存打爆？
 
 ## 全表扫描对 server层的影响
 
@@ -1243,7 +1275,7 @@ mysql -h$host -P$port -u$user -p$pwd -e "select * from db1.t" > $target_file
 
 <img src="./img/myl/37.jpg" width = 90% height = 80% alt="图片名称" align=center />
 
-# 34 | 到底可不可以使用join？
+# 34-到底可不可以使用join？
 
 :fire: 首先，对于我们的查询语句，在上线之前，explain一下是很有必要的，那么对于explain的几种类型需要了解：
 
@@ -1270,7 +1302,7 @@ create table `t2` (`id` int(11) not null,
 ) engine = innodb
 ```
 
-## Index Nested-Loop Join
+## 34.1-Index Nested-Loop Join
 
 ```sql
 select * from t1 straight_join t2 on (t1.a = t2.a);
@@ -1294,7 +1326,7 @@ O(N)= N + N \times2\times\log2 M
 $$
 可以发现，N 越小，整个复杂度越低。
 
-## Simple Nested-Loop Join
+## 34.2-Simple Nested-Loop Join
 
 ```sql 
 select * from t1 straight_join t2 on (t1.a=t2.b);
@@ -1306,7 +1338,7 @@ $$
 $$
 MySQL并没有使用这个Simple Nested-Loop Join 算法， 而是 Block Nested-Loop Join
 
-## Block Nested-Loop Join
+## 34.3-Block Nested-Loop Join
 
 对于 查询，流程如下：`select * from t1 straight_join t2 on (t1.a=t2.b);`
 
@@ -1334,7 +1366,7 @@ MySQL并没有使用这个Simple Nested-Loop Join 算法， 而是 Block Nested-
 
 **在决定哪个表做驱动表的时候，应该是两个表按照各自的条件过滤，过滤完成之后，计算参与 join 的各个字段的总数据量，数据量小的那个表，就是“小表”，应该作为驱动表**。
 
-# 35 | join语句怎么优化？
+# 35-join语句怎么优化？
 
 ```sql
 create table t1(id int primary key, a int, b int, index(a)); 
@@ -1342,7 +1374,7 @@ create table t1(id int primary key, a int, b int, index(a));
 create table t2 like t1;  -- 在表t2中插入 100w 数据
 ```
 
-## Multi-Range Read 优化
+## 35.1-Multi-Range Read 优化
 
 ```sql
 select * from t1 where a>=1 and a<=100;
@@ -1362,7 +1394,7 @@ select * from t1 where a>=1 and a<=100;
 
 <img src="./img/myl/40.jpg" width = 90% height = 80% alt="图片名称" align=center /> 
 
-## Batched Key Access
+## 35.2-Batched Key Access
 
 Batched Key Accesss（BKA）算法，其实是对[NLJ](Index Nested Loop Join) 算法的优化，NLJ的逻辑是，从驱动表t1，一行行取出a的值，再到被驱动表t2做join,而BKA的逻辑是，将表t1的数据取出来一部分，放置到join_buffer中，然后一起传给表t2。
 
@@ -1388,7 +1420,7 @@ Post Script : BKA 算法的优化要依赖于 MRR，使用BKA的前提是开启�
 
 
 
-# 36 | 为什么临时表可以重名？
+# 36-为什么临时表可以重名？
 
 
 
@@ -1396,39 +1428,39 @@ Post Script : BKA 算法的优化要依赖于 MRR，使用BKA的前提是开启�
 
 
 
-# 37 | 什么时候会使用内部临时表？
+# 37-什么时候会使用内部临时表？
 
 
 
-# 38 | 都说`InnoDB`好，那还要不要使用Memory引擎？
+# 38-都说`InnoDB`好，那还要不要使用Memory引擎？
 
 
 
-# 39 | 自增主键为什么不是连续的？
+# 39-自增主键为什么不是连续的？
 
 
 
-# 40 | insert语句的锁为什么这么多？
+# 40-insert语句的锁为什么这么多？
 
 
 
-# 41 | 怎么最快地复制一张表？
+# 41-怎么最快地复制一张表？
 
 
 
-# 42 | grant之后要跟着flush privileges吗？
+# 42-grant之后要跟着flush privileges吗？
 
 
 
-# 43 | 要不要使用分区表？
+# 43-要不要使用分区表？
 
 
 
-# 44 | 答疑文章（三）：说一说这些好问题
+# 44-答疑文章（三）：说一说这些好问题
 
 
 
-# 45 | 自增id用完怎么办？
+# 45-自增id用完怎么办？
 
 
 
@@ -1451,13 +1483,8 @@ insert into unique_key_test values (3,null,'w5'); -- 插入成功
 
 
 
-
-
-**IO成本**
-
  
 
-《Linux性能优化实战》。
 
 
 
@@ -1470,7 +1497,3 @@ insert into unique_key_test values (3,null,'w5'); -- 插入成功
 
 
 
-
-
-
-[^另外一个状态是 Query]: 
