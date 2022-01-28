@@ -169,6 +169,13 @@ truncate table table_name
 
 由于在大表上创建是一个很耗时的操作，所以默认情况下，PG 在建立索引的情况下，建立索引不阻塞读，但是阻塞写操作直到索引建立完成。但是在生产环境中，建索引阻塞写操作是很危险的，你需要的是并发建立索引，[参考这个](https://www.postgresql.org/docs/10/sql-createindex.html#SQL-CREATEINDEX-CONCURRENTLY) 。
 
+~~~sql
+-- 查看当前表建立了哪些索引：
+select * from pg_indexes where tablename='table_name';
+~~~
+
+
+
 ### Index type
 
 *  B-tree , 默认情况下使用这个，可适应大多数场景

@@ -832,6 +832,66 @@ Gudience：when you meet in 7 days or 30days , you should reflect the following 
 * in 7 day =  date_sub(current_day,interval 6 day) 
 * in 30 day = date_sub(current_day,interval 29 day)
 
+###### [044-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/d1f5a1e50d0b49f3a39eb01c4fdb621f?tpId=268&tqId=2286286&ru=/exam/oj&qru=/ta/sql-factory-interview/question-ranking&sourceUrl=%2Fexam%2Foj)
+
+###### [045-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/69c85db3e59245efb7cee51996fe2273?tpId=268&tags=&title=&difficulty=0&judgeStatus=0&rp=0)
+
+```sql
+select level_cut
+     , count(*) as num
+from (
+         select case
+                    when t2.author_level in (1, 2) then '1-2级'
+                    when t2.author_level in (3, 4) then '3-4级'
+                    when t2.author_level in (5, 6) then '5-6级'
+                    end as level_cut
+        from answer_tb t1
+        left join author_tb t2
+        on t1.author_id = t2.author_id
+        where t1.char_len >= 100
+     ) t
+group by level_cut
+order by num desc
+;
+```
+
+###### [046-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/821e5072663f485f8204cf03b89d322a?tpId=268&tags=&title=&difficulty=0&judgeStatus=0&rp=0)
+
+Post Script : pay attention to the order , which the problem not mention. 
+
+###### [047-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/b02cf9ee7b9f4cdda308f8155ff3415d?tpId=268&tags=&title=&difficulty=0&judgeStatus=0&rp=0)
+
+###### [048-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/e080f8a685bc4af3b47749ca3310f1fd?tpId=268&tags=&title=&difficulty=0&judgeStatus=0&rp=0)
+
+```sql
+select t1.author_id    as author_id
+     , t2.author_level as author_level
+     , t1.days_cnt     as days_cnt
+from (
+         select max(t1.author_id) as author_id
+              , count(*)          as days_cnt
+         from (
+                  select author_id
+                       , date_sub(answer_date, interval (row_number() over (partition by author_id order by answer_date )) day) as diff
+                  from (
+                           select author_id
+                                , answer_date
+                           from answer_tb
+                           group by author_id, answer_date
+                       ) t
+              ) t1
+         group by author_id, diff
+         having count(*) >= 3
+     ) t1
+left join author_tb t2
+on t1.author_id = t2.author_id
+;
+```
+
+
+
+
+
 
 
 ## algorithms
