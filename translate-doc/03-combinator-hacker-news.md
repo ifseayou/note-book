@@ -7,7 +7,7 @@
 欢迎来到黑客新闻.
 黑客新闻和其他的社区累站点有一点不同，如您能花一点时间去阅读下面的这段内容和官方的指导手册，我们将不胜感激
 
->HN is an experiment. As a rule, a community site that becomes popular will decline[^1] in quality. Our hypothesis[^2] is that this is not inevitable[^3]—that by making a conscious[^4] effort to resist decline, we can keep it from happening.
+>HN is an experiment. As a rule, a community site that becomes popular will decline[^1] in quality. Our hypothesis[^2] is that this is not inevitable[^3]—that by making a conscious[^4] effort to resist decline[^1], we can keep it from happening.
 
 黑客新闻是一个实验，按照一般的规则来讲，变的流行的社区网站的质量会下降。我们假设这不是必然的，通过有意识的努力去限制质量的下降，我们可以阻止它发生。
 
@@ -43,7 +43,7 @@
 
 如果他们是积极的空评论也是OK的，评论谢谢也没事。我们尤其不鼓不评论或者类似于骂人的消极评论。
 
-> Which brings us to the most important principle on HN: civility. Since long before the web, the anonymity of online conversation has lured[^15] people into being much ruder than they'd be in person. So the principle here is: don't say anything you wouldn't say face to face. This doesn't mean you can't disagree. But disagree without calling names. If you're right, your argument will be more convincing[^16] without them.
+> Which brings us to the most important principle on HN: civility. Since long before the web, the anonymity[^15] of online conversation has lured[^16] people into being much ruder than they'd be in person. So the principle here is: don't say anything you wouldn't say face to face. This doesn't mean you can't disagree. But disagree without calling names. If you're right, your argument will be more convincing[^17] without them.
 
 在黑客新闻上最重要的原则就是：文明。早在网络出现之前，匿名在线交流会引诱人们比现实中的自己更加粗鲁，所以这个原则就是说：不要说那些你在现实中面对面不会说的话。这并不意味着你不能不统一别人的观点，但是不同意不能骂人。如果你是对的，没有这些脏话你的评论会更有说服力。
 
@@ -65,5 +65,7 @@
 [^12]: wheras ：然而
 [^13]: retarded :  迟钝的 
 [^14]: name-calling : 骂人，诽谤
-[^15]:lured : 引诱
-[^16]: convincing  令人信服的 ； convince : 说服
+[^15]: anonymity : 匿名
+[^16]:lured : 引诱
+[^17]: convincing  令人信服的 ； convince : 说服
+

@@ -32,7 +32,7 @@
 
 在实际的查询发生之前，元数据会帮助存储进程判断哪些文件是查询相关的文件
 
-:one: 如果你从一个位置的查询是从另外一个地方获取大量的数据，这回产生很大的网络流量，高延迟而且代价高。
+:one: 如果你从一个位置发起查询另外一个地方获取大量的数据，这会产生很大的网络流量，高延迟而且代价高。
 
 :two: 如果你可以将一部分查询下推到数据存储的地方，由于可以过滤大部分数据，因此可以显著的减少网络流量
 
@@ -54,7 +54,7 @@
 
 ##### 成功的谓词下推的先决条件：
 
-* 存储是平衡的：存储是平衡的意味着 元数据文件的大小小于读取的实际文件大小
+* 存储是平衡的：存储是平衡的意味着元数据文件的大小小于读取的实际文件大小
 
 * ==存储精确的统计信息，元数据和索引==
 
@@ -66,13 +66,13 @@
 >
 > * **Network traffic** (sending data over the network)
 >
-> * **I/O** ( reading disk files are bounded to disk reading speed)
+> * **I/O** ( reading disk files are bounded[^7] to disk reading speed)
 >
-> * **Time** (product SLAz[^7] goals — processing time agreed upon)
+> * **Time** (product SLAz[^8] goals — processing time agreed upon)
 >
 >   > When we use the full power of push-down predicate, we save money by reading only the data we need . Which results in faster query processing. Hence, pay only for what is used.
 >
-> On top of that, we save in network traffic, I/O and precious[^8] time.
+> On top of that, we save in network traffic, I/O and precious[^9] time.
 
 ##### 为什么我们应该关心：
 
@@ -94,12 +94,6 @@
 [^4]: spawn : 产卵
 [^5]: traffic : 交通，network traffic 网络流量
 [^6]: bullet ：子弹，bullet point 要点
-[^7]: service-level agreement , https://zh.wikipedia.org/wiki/%E6%9C%8D%E5%8A%A1%E7%BA%A7%E5%88%AB%E5%8D%8F%E8%AE%AE
-[^8]: precious : 宝贵的；precise 精确 ； 注意区分两者
-
-
-
-
-
-
-
+[^7]: bounded: 受限制的
+[^8]: service-level agreement , https://zh.wikipedia.org/wiki/%E6%9C%8D%E5%8A%A1%E7%BA%A7%E5%88%AB%E5%8D%8F%E8%AE%AE
+[^9]: precious : 宝贵的；precise 精确 ； 注意区分两者

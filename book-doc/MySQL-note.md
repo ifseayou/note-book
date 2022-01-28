@@ -840,7 +840,7 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 
 :one: 取得这个表的主键 id 的最大值 M 和最小值 N;
 
-:two: 用随机函数生成一个最大值到最小值之间的数 X = (M-N)*rand() + N;
+:two: 用随机函数生成一个最大值到最小值之间的数 $X = (M-N)\times rand() + N$;
 
 :three: 取不小于 X 的第一个 ID 的行。
 
@@ -848,7 +848,7 @@ select city,name,age from t where city='杭州' order by name limit 1000  ; -- i
 
 :one: 取得整个表的行数，并记为 C。
 
-:two: 取得 Y = floor(C * rand())。 floor 函数在这里的作用，就是取整数部分。
+:two: 取得 $Y = floor(C * rand())$。 floor 函数在这里的作用，就是取整数部分。
 
 :three: 再用 limit Y,1 取得一行。
 

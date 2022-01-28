@@ -12,7 +12,7 @@
 
 :six: word-note : 一些按照word 记录的笔记
 
-:seven: translate-doc :  每个周翻译一篇英文原文，目前是这个目标。
+:seven: translate-doc :  每个月翻译些英文原文，每个月的翻译量大于5000词
 
 
 
