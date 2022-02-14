@@ -1,4 +1,15 @@
-#### Some English Words
+# Some English Words
+
+### for 
+
+:one: 介词
+
+* 为 ，What  can i do for you?
+* 对于 Eggs are good for you
+
+:two: 连词 ，引导原因状语从句，He must in now,for the light in his room is on
+
+
 
 ```tex
 parcel   # 包

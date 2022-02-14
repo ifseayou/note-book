@@ -482,6 +482,18 @@ having count(*)>3
 
 
 
+#### null 与 x 关联
+
+<img src="./img/hive/11.jpg" width = 100% height = 45% alt="图片名称" align=center /> 
+
+:one: null 和 null 无法相互关联
+
+:two: null 和 ‘’  无法相互关联
+
+
+
+
+
 
 
 ### hive 参数
