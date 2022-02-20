@@ -1263,7 +1263,7 @@ mysql -h$host -P$port -u$user -p$pwd -e "select * from db1.t" > $target_file
 
 :four: 如果发送函数返回 EAGAIN 或 WSAEWOULDBLOCK，就表示本地网络栈（socket send buffer）写满了，进入等待。直到网络栈重新可写，再继续发送。
 
-整个流程如下：
+即：**边读边发**，整个流程如下：
 
 <img src="./img/myl/36.jpg" width = 70% height = 80% alt="图片名称" align=center /> 
 
@@ -1271,11 +1271,24 @@ mysql -h$host -P$port -u$user -p$pwd -e "select * from db1.t" > $target_file
 
 ## 全表扫描对`InnoDB`的影响
 
-**内存利用率**： [buffer pool](实际是 buffer pool 中的 change buffer) 可以起到加速更新的作用，同时也具备加速查询的作用，事务提交的时候，磁盘的数据页是旧的，如果马上有一个查询来读数据页，MySQL并不需要将redo log 应用到数据页，也是直接读内存页就可以了。Buffer pool 对查询的加速效果，依赖内存命中率。`show engine innodb status`  搜索hit 即可定位到。[如何设置buffer pool的大小？](其中 buffer pool 的大小，可通过 参数 `innodb_buffer_pool_size` 设置，一般设置为物理内存的 60%~80%。)  
+**内存利用率**： buffer pool (实际是 buffer pool 中的 change buffer) 可以起到加速更新的作用，同时也具备加速查询的作用，事务提交的时候，磁盘的数据页是旧的，如果马上有一个查询来读数据页，MySQL并不需要将redo log 应用到数据页，也是直接读内存页就可以了。Buffer pool 对查询的加速效果，依赖内存命中率。`show engine innodb status`  搜索hit 即可定位到。[如何设置buffer pool的大小？](其中 buffer pool 的大小，可通过 参数 `innodb_buffer_pool_size` 设置，一般设置为物理内存的 60%~80%。)  
 
 `InnoDB` 内存管理使用的 [LRU](Least Recently Used) 这个缓存淘汰算法，并且是基于链表实现的缓存淘汰算法。 
 
 <img src="./img/myl/37.jpg" width = 90% height = 80% alt="图片名称" align=center />
+
+改进后的 LRU 算法执行流程变成了下面这样。
+
+:one: 图 7 中状态 1，要访问数据页 P3，由于 P3 在 young 区域，因此和优化前的 LRU 算法一样，将其移到链表头部，变成状态 
+
+:two:之后要访问一个新的不存在于当前链表的数据页，这时候依然是淘汰掉数据页 Pm，但是新插入的数据页 Px，是放在 LRU_old 处。
+
+:three: 处于 old 区域的数据页，每次被访问的时候都要做下面这个判断：
+
+* 若这个数据页在 LRU 链表中存在的时间超过了 1 秒，就把它移动到链表头部；
+* 如果这个数据页在 LRU 链表中存在的时间短于 1 秒，位置保持不变。1 秒这个时间，是由参数 innodb_old_blocks_time 控制的。其默认值是 1000，单位毫秒。
+
+这个策略，就是为了处理类似全表扫描的操作量身定制的，在扫描这个大表的过程中，虽然也用到了 Buffer Pool，但是对 young 区域完全没有影响，从而保证了 Buffer Pool 响应正常业务的查询命中率。
 
 # 34-到底可不可以使用join？
 
@@ -1340,7 +1353,7 @@ MySQL并没有使用这个Simple Nested-Loop Join 算法， 而是 Block Nested-
 
 ## 34.3-Block Nested-Loop Join
 
-对于 查询，流程如下：`select * from t1 straight_join t2 on (t1.a=t2.b);`
+对于 查询，`select * from t1 straight_join t2 on (t1.a=t2.b);` 流程如下：
 
 :one: 把表 t1 的数据读入线程内存 join_buffer 中，由于我们这个语句中写的是 select *，因此是把整个表 t1 放入了内存；
 
@@ -1348,7 +1361,7 @@ MySQL并没有使用这个Simple Nested-Loop Join 算法， 而是 Block Nested-
 
 这个过程对 t1和 t2都做了一次全表扫描 ， 总的扫描行数是1100，对于t2的每一行都需要在内存中做判断，共需要 100,000 次比较。但是这个比较是基于内存操作，比Simple Nested-Loop Join 快很多。
 
-其中 [join_buffer](是可以通过 join_buffer_size 进行设定的,默认256k) 如果放不下驱动表，就需要分块（block）放置，过程如下：
+其中 join_buffer[^55] 如果放不下驱动表，就需要分块（block）放置，过程如下：
 
 :one: 扫描表 t1，顺序读取数据行放入 join_buffer 中，放完第 88 行 join_buffer 满了，继续第 2 步；
 
@@ -1365,6 +1378,8 @@ MySQL并没有使用这个Simple Nested-Loop Join 算法， 而是 Block Nested-
 * 内存判断 : N * M
 
 **在决定哪个表做驱动表的时候，应该是两个表按照各自的条件过滤，过滤完成之后，计算参与 join 的各个字段的总数据量，数据量小的那个表，就是“小表”，应该作为驱动表**。
+
+[^55]: join_buffer 是可以通过 join_buffer_size 进行设定的,默认256k)
 
 # 35-join语句怎么优化？
 
@@ -1394,9 +1409,11 @@ select * from t1 where a>=1 and a<=100;
 
 <img src="./img/myl/40.jpg" width = 90% height = 80% alt="图片名称" align=center /> 
 
+MRR 能够提升性能的核心在于，这条查询语句在索引 a 上做的是一个范围查询（也就是说，这是一个多值查询），可以得到足够多的主键 id。这样通过排序以后，再去主键索引查数据，才能体现出“顺序性”的优势。
+
 ## 35.2-Batched Key Access
 
-Batched Key Accesss（BKA）算法，其实是对[NLJ](Index Nested Loop Join) 算法的优化，NLJ的逻辑是，从驱动表t1，一行行取出a的值，再到被驱动表t2做join,而BKA的逻辑是，将表t1的数据取出来一部分，放置到join_buffer中，然后一起传给表t2。
+Batched Key Accesss（BKA）算法，其实是对 NLJ(Index Nested Loop Join) 算法的优化，NLJ的逻辑是，从驱动表t1，一行行取出a的值，再到被驱动表t2做join，对于表 t2 来说，每次都是匹配一个值。这时，MRR 的优势就用不上了，而BKA的逻辑是，将表t1的数据取出来一部分，放置到join_buffer中，然后一起传给表t2。
 
 <img src="./img/myl/41.jpg" width = 100% height = 80% alt="图片名称" align=center />
 
