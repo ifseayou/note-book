@@ -4,9 +4,9 @@
 
 Almost 20 per day , it is really a challenge!
 
-## SQL
+## 一，SQL
 
-### tag-easy
+### 1.1-tag-easy
 
 some problem is extremely easy , so there is no need to describe solution
 
@@ -113,7 +113,7 @@ group by id;
 -- if remove sum agg function ,we will find mysql return the first row
 ```
 
-### tag-medium
+### 1.2-tag-medium
 
 ###### [012- `LeetCode`176problem](https://leetcode.com/problems/second-highest-salary/submissions/)
 
@@ -448,7 +448,7 @@ from (
 ;
 ```
 
-#### from nowcoder website SQL 
+#### 1.3-from nowcoder website SQL 
 
 ###### [028-`nowcoder` SQL93 Problem](https://www.nowcoder.com/practice/048ed413ac0e4cf4a774b906fc87e0e7?tpId=82&&tqId=38864&rp=1&ru=/ta/sql&qru=/ta/sql/question-ranking)
 
@@ -894,9 +894,9 @@ on t1.author_id = t2.author_id
 
 
 
-## algorithms
+## 二，algorithms
 
-### easy-tag
+### 2.1-easy-tag
 
 ###### [001-`LeetCode`268problem](https://leetcode.com/problems/missing-number/)
 
@@ -1014,4 +1014,107 @@ public ListNode mergeTwoLists2(ListNode list1, ListNode list2) {
 un solve the problem.
 
 
+
+## 三，classic-algorith
+
+if you wanna swap `a` and `b`, you can use the following method like this:
+
+:one:
+
+```java
+private void swap1(int[] arr, int i, int j) {
+    int tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+}
+```
+
+:two:
+
+```java
+private void swap2(int[] arr, int i, int j) {
+    arr[i] = arr[i] ^ arr[j];
+    arr[j] = arr[i] ^ arr[j];
+    arr[i] = arr[i] ^ arr[j];
+}
+```
+
+:three:
+
+```sql
+private void swap4(int[] arr, int i, int j) {
+    arr[i] = arr[i] + arr[j];
+    arr[j] = arr[i] - arr[j];
+    arr[i] = arr[i] - arr[j];
+}
+```
+
+###### 001: bubble sort
+
+There is two points : 
+
+:a: $n - 1$ times；
+
+:b: Find the current max place the last location
+
+```java
+public void bubbleSort(int[] arr) {
+    if (arr == null || arr.length < 2) {
+        return;
+    }
+    for (int end = arr.length - 1; end > 0; end--) {
+        for (int i = 0; i < end; i++) {
+            if (arr[i] > arr[i + 1]) {
+                swap1(arr,i,i+1);
+            }
+        }
+    }
+}
+```
+
+###### 002-select sort
+
+There is two points :
+
+:a: $n - 1$ times
+
+:b: Find the current min place the front location
+
+```java
+public void selectSort(int[] arr) {
+    if (arr == null || arr.length < 2) {
+        return;
+    }
+    for (int i = 0; i < arr.length - 1; i++) {
+        int minIndex = i;
+        for (int j = i + 1; j < arr.length; j++) {
+            if (arr[j] < arr[minIndex])
+                minIndex = j;
+        }
+        swap1(arr, i, minIndex);
+    }
+}
+```
+
+###### 003-insert sort
+
+There is two points : 
+
+:a:$n-1$ times 
+
+:b: there first element is default order
+
+```sql
+public void insertSort(int[] arr) {
+    if (arr == null || arr.length < 2) {
+        return;
+    }
+    for (int i = 1; i < arr.length; i++) {
+        for (int j = i; j > 0; j--) {
+            if (arr[j] < arr[j - 1])
+                swap3(arr, j, j - 1);
+        }
+    }
+}
+```
 
