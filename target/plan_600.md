@@ -1,10 +1,10 @@
 # Plan 600 
 
-🤣 : At first ,  talk about the title 'plan 600' , why did I take this tile? Just because I wanna enhance my SQL ability and algorithm ability , I plan complete 600 SQL/Algorithm problems in January 2022, and dead line is  2022-02-01. The following is my record of the challenge.
+🤣 : At first ,  talk about the title 'plan 600' , why did I take this tile? Just because I wanna enhance my SQL ability and algorithm ability , I plan complete 600 SQL/Algorithm problems in January 2023, and dead line is  2022-02-01. The following is my record of the challenge.
 
 Almost 20 per day , it is really a challenge!
 
-## 一，SQL
+## 1，SQL
 
 ### 1.1-tag-easy
 
@@ -894,7 +894,7 @@ on t1.author_id = t2.author_id
 
 
 
-## 二，algorithms
+## 2，algorithms
 
 ### 2.1-easy-tag
 
@@ -1015,7 +1015,11 @@ un solve the problem.
 
 
 
-## 三，classic-algorith
+## 3，classic-algorith
+
+### 3.1-some skills
+
+#### 3.1.1-swap method
 
 if you wanna swap `a` and `b`, you can use the following method like this:
 
@@ -1048,6 +1052,36 @@ private void swap4(int[] arr, int i, int j) {
     arr[i] = arr[i] - arr[j];
 }
 ```
+
+#### 3.1.2- get middle of  range
+
+If you want to get the middle of `from L to R` , you can use the following method like this:
+
+:one: Post Script : the plus operator and the shift operator has the same priority, so you need add a brackets
+
+```java
+int mid = L + ((R - L) >> 1);
+```
+
+:two:
+
+```java
+int mid = L + (R - L) / 2;
+```
+
+#### 3.1.2- random a value from a range
+
+If you want to get a random value from a range [L,R]  and use the random value to swap anothor value, you can use the following method like this:
+
+```java 
+swap2(arr,(L + new Random().nextInt(R - L + 1)),R);
+```
+
+Post Script: `nextInt()` return a random value which is between 0 (inclusive) and the specified value (exclusive)。
+
+
+
+### 3.2-order algorith
 
 ###### 001: bubble sort
 
@@ -1115,6 +1149,92 @@ public void insertSort(int[] arr) {
                 swap3(arr, j, j - 1);
         }
     }
+}
+```
+
+###### 004-merge sort
+
+There is two points : 
+
+:a: Time complexity is $lg_2^N$ , and need a help array
+
+:b: resursion implement
+
+```java 
+public void mergeSort(int[] arr) {
+    if (arr == null || arr.length < 2) {
+        return;
+    }
+    sortProcess(arr, 0, arr.length - 1);
+}
+
+private void sortProcess(int[] arr, int L, int R) {
+    if (L == R) return;
+
+    int mid = L + ((R - L) >> 1);
+    sortProcess(arr, L, mid);
+    sortProcess(arr, mid + 1, R);
+    merge(arr, L, mid, R);
+}
+
+private void merge(int[] arr, int L, int mid, int R) {
+    int p1 = L;
+    int p2 = mid + 1;
+    int[] help = new int[R - L + 1];
+    int i = 0;
+
+    while (p1 <= mid && p2 <= R) {
+        help[i++] = arr[p1] < arr[p2] ? arr[p1++] : arr[p2++];
+    }
+    while (p1 <= mid) {
+        help[i++] = arr[p1++];
+    }
+    while (p2 <= R) {
+        help[i++] = arr[p2++];
+    }
+    for (i = 0; i < help.length; i++) {
+        arr[L + i] = help[i];
+    }
+}
+```
+
+###### 004- quick sort
+
+There is two points : 
+
+:a: Time complexity is $lg_2^N$  ， resursion implement
+
+:b: pay attention to the partition process
+
+```sql
+public void quickSort(int[] arr) {
+    if (arr == null || arr.length < 2) {
+        return;
+    }
+    process(arr, 0, arr.length - 1);
+}
+
+private void process(int[] arr, int L, int R) {
+    if (L < R) {
+        swap1(arr, (L + new Random().nextInt(R - L + 1)), R);
+        int[] p = partition(arr, L, R);
+        process(arr, L, p[0] - 1);
+        process(arr, p[1] + 1, R);
+    }
+}
+
+private int[] partition(int[] arr, int L, int R) {
+    int less = L - 1;
+    int more = R;
+    while (L < more) {
+        if (arr[L] < arr[R])
+            swap1(arr, ++less, L++);
+        else if (arr[L] > arr[R])
+            swap1(arr, --more, L);
+        else L++;
+    }
+    swap1(arr, R, more);
+    return new int[]{less + 1, more};
 }
 ```
 
