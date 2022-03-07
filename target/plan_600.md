@@ -888,7 +888,93 @@ on t1.author_id = t2.author_id
 ;
 ```
 
+###### 049- SQL Problem
 
+describe : please find the student whose grades in each subject are grather than the average.
+
+```sql
+with tmp1 as (
+select 1001 as stu_id, '01' as sub_id ,  90 as  score
+union all
+select 1001 as stu_id, '02' as sub_id ,  90 as  score
+union all
+select 1001 as stu_id, '03' as sub_id ,  90 as  score
+union all
+select 1002 as stu_id, '01' as sub_id ,  85 as  score
+union all
+select 1002 as stu_id, '02' as sub_id ,  85 as  score
+union all
+select 1002 as stu_id, '03' as sub_id ,  70 as  score
+union all
+select 1003 as stu_id, '01' as sub_id ,  70 as  score
+union all
+select 1003 as stu_id, '02' as sub_id ,  70 as  score
+union all
+select 1003 as stu_id, '03' as sub_id ,  85 as  score
+),
+     tmp2 as (
+         select sub_id,avg(score) as avg_score
+         from tmp1
+         group by sub_id
+         )
+, tmp3 as (
+    select t1.stu_id,
+    case when t1.score  > t2.avg_score then 0
+    else 1 end as flag
+    from tmp1  t1
+    left join tmp2 t2
+    on t1.sub_id = t2.sub_id
+    )
+select stu_id
+from tmp3
+group by stu_id
+having  sum(flag) = 0
+```
+
+###### 050- SQL Problem
+
+Describe : Get the acculate value
+
+```sql
+with tmp1 as (
+select 'u01' as user_id ,   '2017/1/21' as visit_date ,5 as visit_cnt
+union all
+select 'u02' as user_id ,   '2017/1/23' as visit_date ,6 as visit_cnt
+union all
+select 'u03' as user_id ,   '2017/1/22' as visit_date ,8 as visit_cnt
+union all
+select 'u04' as user_id ,   '2017/1/20' as visit_date ,3 as visit_cnt
+union all
+select 'u01' as user_id ,   '2017/1/23' as visit_date ,6 as visit_cnt
+union all
+select 'u01' as user_id ,   '2017/2/21' as visit_date ,8 as visit_cnt
+union all
+select 'u02' as user_id ,   '2017/1/23' as visit_date ,6 as visit_cnt
+union all
+select 'u01' as user_id ,   '2017/2/22' as visit_date ,4 as visit_cnt
+)
+, tmp2  as (
+    select   user_id
+           ,  date_format(replace(visit_date,'/','-'),'yyyy-MM') visit_month
+           , sum(visit_cnt) as visit_cnt
+    from tmp1
+    group by user_id
+           ,  date_format(replace(visit_date,'/','-'),'yyyy-MM')
+)
+select  user_id
+     , visit_month
+     , visit_cnt
+     , sum(visit_cnt) over(partition by user_id order by visit_month)
+from tmp2
+order by user_id,visit_month
+```
+
+###### 051~52 -JD-SQL Problem
+
+有50W个京东店铺，每个顾客访客访问任何一个店铺的任何一个商品时都会产生一条访问日志，访问日志存储的表名为Visit，访客的用户id为user_id，被访问的店铺名称为shop，请统计：
+
+* 每个店铺的UV（访客数）
+* 每个店铺访问次数top3的访客信息。输出店铺名称、访客id、访问次数
 
 
 
@@ -1156,7 +1242,7 @@ public void insertSort(int[] arr) {
 
 There is two points : 
 
-:a: Time complexity is $lg_2^N$ , and need a help array
+:a: Time complexity is $log_2^N$ , and need a help array
 
 :b: resursion implement
 
@@ -1235,6 +1321,52 @@ private int[] partition(int[] arr, int L, int R) {
     }
     swap1(arr, R, more);
     return new int[]{less + 1, more};
+}
+```
+
+###### 005- heap sort
+
+There is two points : 
+
+:a: Time complexity is $log_2^N$  
+
+:b: Heap is  a completely binary tree,can implement with a array.
+
+```java 
+public void heapSort(int[] arr) {
+    if (arr == null || arr.length < 2) {
+        return;
+    }
+    // heapInsert
+    for (int i = 0; i < arr.length; i++) {
+        heapInsert(arr, i);
+    }
+    int heapSize = arr.length;
+    swap2(arr, 0, --heapSize);
+    while (heapSize > 0) {
+        heapify(arr, 0, heapSize);
+        swap2(arr, 0, --heapSize);
+    }
+}
+
+// process the arr (from index[include] to heapSize[exclude]) become heap
+private void heapify(int[] arr, int index, int heapSize) {
+    int left = index * 2 + 1;
+    while (left < heapSize) {
+        int largest = left + 1 > heapSize && arr[left + 1] > arr[left] ? left + 1 : left;
+        largest = arr[index] > arr[largest] ? index : largest;
+        if (largest == index) break;
+        swap2(arr, index, largest);
+        left = index * 2 + 1;
+    }
+
+}
+
+private void heapInsert(int[] arr, int index) {
+    while (arr[index] > arr[(index - 1) / 2]) {
+        swap2(arr, index, (index - 1) / 2);
+        index = (index - 1) / 2;
+    }
 }
 ```
 

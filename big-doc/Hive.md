@@ -490,6 +490,15 @@ having count(*)>3
 
 :two: null 和 ‘’  无法相互关联
 
+#### 24/5 的结果
+
+| 数据库                | 值   |
+| --------------------- | ---- |
+| Java / PostgreSQL     | 4    |
+| Hive / Impala / MySQL | 4.8  |
+
+
+
 
 
 
