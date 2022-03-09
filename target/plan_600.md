@@ -973,8 +973,96 @@ order by user_id,visit_month
 
 有50W个京东店铺，每个顾客访客访问任何一个店铺的任何一个商品时都会产生一条访问日志，访问日志存储的表名为Visit，访客的用户id为user_id，被访问的店铺名称为shop，请统计：
 
-* 每个店铺的UV（访客数）
+* 每个店铺的UV（访客数）去重后的结果
 * 每个店铺访问次数top3的访客信息。输出店铺名称、访客id、访问次数
+
+```sql
+ -- Q1 
+ with tmp1 as (
+select 'u1' as user_id ,  'a' as shop_id union all
+select 'u2' as user_id ,  'b' as shop_id union all
+select 'u1' as user_id ,  'b' as shop_id union all
+select 'u1' as user_id ,  'a' as shop_id union all
+select 'u3' as user_id ,  'c' as shop_id union all
+select 'u4' as user_id ,  'b' as shop_id union all
+select 'u1' as user_id ,  'a' as shop_id union all
+select 'u2' as user_id ,  'c' as shop_id union all
+select 'u5' as user_id ,  'b' as shop_id union all
+select 'u4' as user_id ,  'b' as shop_id union all
+select 'u6' as user_id ,  'c' as shop_id union all
+select 'u2' as user_id ,  'c' as shop_id union all
+select 'u1' as user_id ,  'b' as shop_id union all
+select 'u2' as user_id ,  'a' as shop_id union all
+select 'u2' as user_id ,  'a' as shop_id union all
+select 'u3' as user_id ,  'a' as shop_id union all
+select 'u5' as user_id ,  'a' as shop_id union all
+select 'u5' as user_id ,  'a' as shop_id union all
+select 'u5' as user_id ,  'a' as shop_id
+)
+select shop_id
+    , count(distinct user_id) as visit_cnt
+from tmp1
+group by shop_id
+
+-- Q2
+with tmp1 as (
+select 'u1' as user_id ,  'a' as shop_id union all
+select 'u2' as user_id ,  'b' as shop_id union all
+select 'u1' as user_id ,  'b' as shop_id union all
+select 'u1' as user_id ,  'a' as shop_id union all
+select 'u3' as user_id ,  'c' as shop_id union all
+select 'u4' as user_id ,  'b' as shop_id union all
+select 'u1' as user_id ,  'a' as shop_id union all
+select 'u2' as user_id ,  'c' as shop_id union all
+select 'u5' as user_id ,  'b' as shop_id union all
+select 'u4' as user_id ,  'b' as shop_id union all
+select 'u6' as user_id ,  'c' as shop_id union all
+select 'u2' as user_id ,  'c' as shop_id union all
+select 'u1' as user_id ,  'b' as shop_id union all
+select 'u2' as user_id ,  'a' as shop_id union all
+select 'u2' as user_id ,  'a' as shop_id union all
+select 'u3' as user_id ,  'a' as shop_id union all
+select 'u5' as user_id ,  'a' as shop_id union all
+select 'u5' as user_id ,  'a' as shop_id union all
+select 'u5' as user_id ,  'a' as shop_id
+)
+   , tmp2 as (
+    select shop_id
+         , user_id
+         , count(*) as visit_cnt
+    from tmp1
+    group by shop_id, user_id
+)
+select shop_id
+     , user_id
+     , visit_cnt
+from (
+         select shop_id
+              , user_id
+              , visit_cnt
+              , row_number() over (partition by shop_id order by visit_cnt desc) rk
+         from tmp2
+     ) t
+where t.rk <= 3
+```
+
+###### 053 -SQL Problem
+
+求非空值的第一个值， 在下面的例子中为A商品标记类目为cate_02
+
+```sql
+with tmp1 as (
+select 'a' as goods_id , null as cate_id , '2022-03-09' as tz union all
+select 'a' as goods_id , 'cate_01' as cate_id , '2022-03-10' as tz union all
+select 'a' as goods_id , 'cate_02' as cate_id , '2022-03-11' as tz union all
+select 'a' as goods_id , null as cate_id , '2022-03-12' as tz
+)
+select goods_id
+     , cate_id
+     , tz
+     , first_value(cate_id) over(partition  by goods_id order by (if(cate_id is null , '1970-01-01' , tz)) desc) new_cate_id
+from tmp1;
+```
 
 
 
