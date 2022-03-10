@@ -257,7 +257,67 @@ public static class StartEndDuration
 
 DataStrem API (数据流API)为许多普通的流处理操作提供源语，比如窗口，记录一次转换，通过外部的数据存储丰富事件。这些数据流API 支持Java或者Scala ，而且基于函数，比如 map(),reduce(),aggregate()。可以通过Java/Scala Lambda表达式扩展接口定义函数。
 
-下面的例子中展示....
+下面的例子中展示了怎样去会话化一个点击流并对每个会话的点击进行计数。
+
+```java 
+// a stream of website clicks
+DataStream<Click> clicks = ...
+
+DataStream<Tuple2<String, Long>> result = clicks
+  // project clicks to userId and add a 1 for counting
+  .map(
+    // define function by implementing the MapFunction interface.
+    new MapFunction<Click, Tuple2<String, Long>>() {
+      @Override
+      public Tuple2<String, Long> map(Click click) {
+        return Tuple2.of(click.userId, 1L);
+      }
+    })
+  // key by userId (field 0)
+  .keyBy(0)
+  // define session window with 30 minute gap
+  .window(EventTimeSessionWindows.withGap(Time.minutes(30L)))
+  // count clicks per session. Define function as lambda function.
+  .reduce((a, b) -> Tuple2.of(a.f0, a.f1 + b.f1));
+```
+
+### SQL & Table API
+
+> Flink features two relational APIs, the [Table API and SQL](https://nightlies.apache.org/flink/flink-docs-stable/dev/table/index.html). Both APIs are unified APIs for batch and stream processing, i.e., queries are executed with the same semantics on unbounded, real-time streams or bounded, recorded streams and produce the same results. The Table API and SQL leverage [Apache Calcite](https://calcite.apache.org/) for parsing, validation, and query optimization. They can be seamlessly integrated with the DataStream and DataSet APIs and support user-defined scalar, aggregate, and table-valued functions.
+>
+> Flink’s relational APIs are designed to ease the definition of [data analytics](https://flink.apache.org/usecases.html#analytics), [data pipelining, and ETL applications](https://flink.apache.org/usecases.html#pipelines).
+>
+> The following example shows the SQL query to sessionize a clickstream and count the number of clicks per session. This is the same use case as in the example of the DataStream API.
+
+Flink 有2种关系型的API，Table API 和 SQL。2种API都是为了流批处理统一的API。即，在无界的实时流或者有界流以相同的语义执行查询，而且产生相同的结果。Table API 和 SQL 利用 Apache Calcite 进行编译，验证和查询优化。他们可以无缝的集成DataStream和DataSetAPI，并且支持用户自定义扩展，聚合，表值函数。
+
+Flink 的关系型API为了简化数据分析、数据管道化、ETL应用而设计。
+
+下面的例子展示了SQL查询去会话化点击流并且为每个会话流点击计数。这是一个和DataStreamAPI一样的使用例子
+
+```sql
+SELECT userId, COUNT(*)
+FROM clicks
+GROUP BY SESSION(clicktime, INTERVAL '30' MINUTE), userId
+```
+
+> ## Libraries
+>
+> Flink features several libraries for common data processing use cases. The libraries are typically embedded in an API and not fully self-contained. Hence, they can benefit from all features of the API and be integrated with other libraries.
+>
+> - **[Complex Event Processing (CEP)](https://nightlies.apache.org/flink/flink-docs-stable/dev/libs/cep.html)**: Pattern detection is a very common use case for event stream processing. Flink’s CEP library provides an API to specify patterns of events (think of regular expressions or state machines). The CEP library is integrated with Flink’s DataStream API, such that[^38] patterns are evaluated on DataStreams. Applications for the CEP library include network intrusion detection, business process monitoring, and fraud detection.
+> - **[DataSet API](https://nightlies.apache.org/flink/flink-docs-stable/dev/batch/index.html)**: The DataSet API is Flink’s core API for batch processing applications. The primitives of the DataSet API include *map*, *reduce*, *(outer) join*, *co-group*, and *iterate*. All operations are backed by algorithms and data structures that operate on serialized data in memory and spill to disk if the data size exceed the memory budget. The data processing algorithms of Flink’s DataSet API are inspired by traditional database operators, such as hybrid hash-join or external merge-sort.
+> - **[Gelly](https://nightlies.apache.org/flink/flink-docs-stable/dev/libs/gelly/index.html)**: Gelly is a library for scalable graph processing and analysis. Gelly is implemented on top of and integrated with the DataSet API. Hence, it benefits from its scalable and robust operators. Gelly features [built-in algorithms](https://nightlies.apache.org/flink/flink-docs-stable/dev/libs/gelly/library_methods.html), such as label propagation, triangle enumeration, and page rank, but provides also a [Graph API](https://nightlies.apache.org/flink/flink-docs-stable/dev/libs/gelly/graph_api.html) that eases the implementation of custom graph algorithms.
+
+对于普通的数据处理场景，Flink有几个库。这些库被嵌入到API中并且并不是完全自包含的。因此，他们可以从所有API的功能中受益，并且和其他的库集成。
+
+:one: : 复杂时间处理（CEP）： 事件流处理中，模式检查是一个非常普通的场景。FLink的CEP库提供了一种API去指定事件模式（想想正则表达式和状态机）。 CEP库集成了Flink DataStream API，以便于在DataStream上评估模式。可以使用CEP库处理的应用包含：网络规则探测、业务流程监控、作弊检测。
+
+
+
+
+
+
 
 ## Operations
 
@@ -304,3 +364,5 @@ DataStrem API (数据流API)为许多普通的流处理操作提供源语，比�
 [^35]: timer : 计时器
 [^36]: business ：业务； 商务
 [^37]:verbose : 冗长的
+[^38]: such that: 以便于
+

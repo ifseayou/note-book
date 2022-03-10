@@ -476,7 +476,7 @@ having count(*)>3
 
 #### order by 字符串
 
-如下：正序排列，null会排到最后；因为其 **ascii值为0**
+如下：倒序排列，null会排到最后；因为其 **ascii值为0**
 
 <img src="./img/hive/10.png" width = 60% height = 45% alt="图片名称" align=center /> 
 
