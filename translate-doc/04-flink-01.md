@@ -306,20 +306,113 @@ GROUP BY SESSION(clicktime, INTERVAL '30' MINUTE), userId
 > Flink features several libraries for common data processing use cases. The libraries are typically embedded in an API and not fully self-contained. Hence, they can benefit from all features of the API and be integrated with other libraries.
 >
 > - **[Complex Event Processing (CEP)](https://nightlies.apache.org/flink/flink-docs-stable/dev/libs/cep.html)**: Pattern detection is a very common use case for event stream processing. Flink’s CEP library provides an API to specify patterns of events (think of regular expressions or state machines). The CEP library is integrated with Flink’s DataStream API, such that[^38] patterns are evaluated on DataStreams. Applications for the CEP library include network intrusion detection, business process monitoring, and fraud detection.
-> - **[DataSet API](https://nightlies.apache.org/flink/flink-docs-stable/dev/batch/index.html)**: The DataSet API is Flink’s core API for batch processing applications. The primitives of the DataSet API include *map*, *reduce*, *(outer) join*, *co-group*, and *iterate*. All operations are backed by algorithms and data structures that operate on serialized data in memory and spill to disk if the data size exceed the memory budget. The data processing algorithms of Flink’s DataSet API are inspired by traditional database operators, such as hybrid hash-join or external merge-sort.
+> - **[DataSet API](https://nightlies.apache.org/flink/flink-docs-stable/dev/batch/index.html)**: The DataSet API is Flink’s core API for batch processing applications. The primitives of the DataSet API include *map*, *reduce*, *(outer) join*, *co-group*, and *iterate*. All operations are backed by algorithms and data structures that operate on serialized data in memory and spill to disk if the data size exceed the memory budget[^39]. The data processing algorithms of Flink’s DataSet API are inspired by traditional database operators, such as hybrid hash-join or external merge-sort.
 > - **[Gelly](https://nightlies.apache.org/flink/flink-docs-stable/dev/libs/gelly/index.html)**: Gelly is a library for scalable graph processing and analysis. Gelly is implemented on top of and integrated with the DataSet API. Hence, it benefits from its scalable and robust operators. Gelly features [built-in algorithms](https://nightlies.apache.org/flink/flink-docs-stable/dev/libs/gelly/library_methods.html), such as label propagation, triangle enumeration, and page rank, but provides also a [Graph API](https://nightlies.apache.org/flink/flink-docs-stable/dev/libs/gelly/graph_api.html) that eases the implementation of custom graph algorithms.
 
 对于普通的数据处理场景，Flink有几个库。这些库被嵌入到API中并且并不是完全自包含的。因此，他们可以从所有API的功能中受益，并且和其他的库集成。
 
 :one: : 复杂时间处理（CEP）： 事件流处理中，模式检查是一个非常普通的场景。FLink的CEP库提供了一种API去指定事件模式（想想正则表达式和状态机）。 CEP库集成了Flink DataStream API，以便于在DataStream上评估模式。可以使用CEP库处理的应用包含：网络规则探测、业务流程监控、作弊检测。
 
+:two: DataSet API: DataSteam API是Flink批处理应用的核心API，DataSet API 的原语包含， `map,reduce,join,co-group,iterate`。所有的操作由算法和数据结构支撑，这些算法和数据结构在内存中的序列化数据上操作，如果数据的大小超过了内存预算会一些到磁盘。Flink的DataSet API的数据处理算法从传统数据库操作中获的灵感，比如混合hash join 或者归并排序。
 
-
-
-
-
+:three: Gelly 是一个用于扩展图形处理和分析的库。Gelly是基于DataSet API的顶层实现并且和DataSet API 集成。因此，Gelly 可以从其可扩展/健壮操作符中获益。Gelly有一个内置算法，比如，标签传播，三角枚举，页排名，但是也提供Gelly API， 这些API 简化了自定义图算法的实现。
 
 ## Operations
+
+> Apache Flink is a framework for stateful computations over unbounded and bounded data streams. Since many streaming applications are designed to run continuously with minimal downtime, a stream processor must provide excellent failure recovery, as well as, tooling to monitor and maintain applications while they are running.
+>
+> Apache Flink puts a strong focus on the operational aspects of stream processing. Here, we explain Flink’s failure recovery mechanism and present its features to manage and supervise[^40] running applications.
+
+Flink是一个在有界流和无界流进行状态计算的框架。因为很多流应用是按照最小宕机时间连续运行的，一个流处理必须提供优秀的故障恢复，以及当他们运行的时候提供监控和维护应用的工具。
+
+Flink聚焦于流处理操作角度，因此，我们解释Flink的故障恢复机制并且展示它管理和监督运行中的应用的功能。
+
+> ## Run Your Applications Non-Stop 24/7
+>
+> Machine and process failures are ubiquitous[^41] in distributed systems. A distributed stream processors like Flink must recover from failures in order to be able to run streaming applications 24/7. Obviously, this does not only mean to restart an application after a failure but also to ensure that its internal state remains consistent, such that the application can continue processing as if the failure had never happened.
+>
+> Flink provides several features to ensure that applications keep running and remain consistent:
+
+7 * 27 小时不间断的运行你的应用。
+
+机器和进程故障是分布式系统中，为了7*24小时运行流应用，一个像Flink这样的流处理其必须提供故障恢复。显然，这并不仅仅意味着在应用失效之后重而且要保证其内不状态一致，即：应用能够继续处理（数据流）就好像它没有发生故障一样。
+
+Flink 提供了几个功能去保证应用能够持续运行并且保证一致。
+
+> - **Consistent Checkpoints**: Flink’s recovery mechanism is based on consistent checkpoints of an application’s state. In case of a failure, the application is restarted and its state is loaded from the latest checkpoint. In combination with resettable stream sources, this feature can guarantee *exactly-once state consistency*.
+> - **Efficient Checkpoints**: Checkpointing the state of an application can be quite expensive if the application maintains terabytes of state. Flink’s can perform asynchronous and incremental checkpoints, in order to keep the impact of checkpoints on the application’s latency SLAs very small.
+> - **End-to-End Exactly-Once**: Flink features transactional sinks for specific storage systems that guarantee that data is only written out exactly once, even in case of failures.
+> - **Integration with Cluster Managers**: Flink is tightly integrated with cluster managers, such as [Hadoop YARN](https://hadoop.apache.org/), [Mesos](https://mesos.apache.org/), or [Kubernetes](https://kubernetes.io/). When a process fails, a new process is automatically started to take over its work.
+> - **High-Availability Setup**: Flink feature a high-availability mode that eliminates all single-points-of-failure. The HA-mode is based on [Apache ZooKeeper](https://zookeeper.apache.org/), a battle-proven[^42] service for reliable distributed coordination.
+
+:one: 一致性检查点：Flink的 回复机制基于一个应用状态的一致检查点。万一发生失效，应用会重新启动，而且从最新的检查点中加载其状态。结合可重置的流源，这个功能能够保证精确一次状态一致性
+
+:two: 高效检查点：检查点ing 应用的状态是相当昂贵的，如果应用维护了太字节的状态。为了保持在应用延迟上检查点的影响很小， Flink的检查点是异步的且增长的
+
+:three: 端到端 精确一致： 对于特定的存储系统，Flink有事务下沉，这意味着数据只会被写入一次，即便发生失效
+
+:four: 集成集群关联器：Flink紧密的集成了集群管理器，比如 Hadoop YARN，Mesos， Kubernetes，当一个进程失效时，一个新的进程会自动启动来接管失效进程的工作
+
+:five: 高可用设置： Flink 有高可用模式，这种吗，是可以消除所有单点故障，HA 模式基于 Zookeeper ，一个久经证明的 可靠分布式协调服务。
+
+> ## Update, Migrate[^43], Suspend[^44], and Resume[^45] Your Applications
+>
+> Streaming applications that power business-critical services need to be maintained. Bugs need to be fixed and improvements or new features need to be implemented. However, updating a stateful streaming application is not trivial[^46]. Often one cannot simply stop the applications and restart a fixed or improved version because one cannot afford to lose the state of the application.
+>
+> Flink’s *Savepoints* are a unique and powerful feature that solves the issue of updating stateful applications and many other related challenges. A savepoint is a consistent snapshot of an application’s state and therefore very similar to a checkpoint. However in contrast to checkpoints, savepoints need to be manually triggered and are not automatically removed when an application is stopped. A savepoint can be used to start a state-compatible application and initialize its state. Savepoints enable the following features:
+
+更新，迁移，暂停，恢复你的应用。
+
+赋能重要服务的流应用需要维护。bug需要被修复，新功能和提升需要被实现。然而，更新一个状态流应用并不是一件小事。通常不能简单的停止应用并且重启一个已修复或已提升的版本，因为人们不能承担失去应用状态的代价。
+
+Flink 的 保存点 是一个独一无二且强大的功能，这个功能可以解决更新状态应用的问题，或者解决其他相关类似的挑战。一个保存点是一个应用状态的一致性快照，因此和检查点非常类似。然而，相比于检查点，保存点需要手动触发，并且在应用被停止时不会自动移除。一个保存点可以用来启动一个状态兼容的应用并且初始化它的状态。保存点具备以下的功能：
+
+> - **Application Evolution**: Savepoints can be used to evolve applications. A fixed or improved version of an application can be restarted from a savepoint that was taken from a previous version of the application. It is also possible to start the application from an earlier point in time (given such a savepoint exists) to repair incorrect results produced by the flawed version.
+> - **Cluster Migration**: Using savepoints, applications can be migrated (or cloned) to different clusters.
+> - **Flink Version Updates**: An application can be migrated to run on a new Flink version using a savepoint.
+> - **Application Scaling**: Savepoints can be used to increase or decrease the parallelism of an application.
+> - **A/B Tests and What-If Scenarios**: The performance or quality of two (or more) different versions of an application can be compared by starting all versions from the same savepoint.
+> - **Pause and Resume**: An application can be paused by taking a savepoint and stopping it. At any later point in time, the application can be resumed from the savepoint.
+> - **Archiving**: Savepoints can be archived to be able to reset the state of an application to an earlier point in time.
+
+:one:应用演化：保存点可以用来发展（迭代）应用。一个应用的修复或者提升(迭代)版本可以从一个（应用上一个版本留下的）保存点重启。从一个更早时间点的保存点启动去修复错误版本导致的不正确结果也是可能的，只要这个更早的保存点存在。
+
+:two: 集群迁移：使用保存点，应用可以迁移或者克隆到不同的集群
+
+:three: Flink 版本更新：使用保存点可以将应用可以被迁移新版本的Flink上
+
+:four: 扩展应用：保存点可以用来提升或者降低应用的并行度
+
+:five: A/B 测试 和假设场景 :  通过从同样的保存点启动的方式，我们可以比对2个应用版本或者是多个应用版本的性能和质量
+
+:six: 暂停 和 恢复：可以通过获取一个保存点并且停止的方式来暂停应用，在之后任何时间点，应用可以从这个保存点恢复
+
+:seven: 归档：保存点可以被归档。这样应用可以从之前的任何时间点重置
+
+> ## Monitor and Control Your Applications
+>
+> Just like any other service, continuously running streaming applications need to be supervised and integrated into the operations infrastructure, i.e., monitoring and logging services, of an organization. Monitoring helps to anticipate[^50] problems and react ahead of time. Logging enables root-cause[^51] analysis to investigate[^52] failures. Finally, easily accessible interfaces to control running applications are an important feature.
+>
+> Flink integrates nicely with many common logging and monitoring services and provides a REST API to control applications and query information.
+
+监控并且控制你的应用
+
+像其他服务一样，持续运行地流应用需要被监控和集成到操作架构中，即：组织的监控工和日志服务。监控帮助在问题发生之前预料问题的发生。日志能够定位分析失败的根本原因。最后，方便控制运行应用的接口是一个重要的功能。
+
+Flink 集成了很多通用的日志和监控服务，而且提供了REST API去控制应用 和查询信息好的。
+
+> - **Web UI**: Flink features a web UI to inspect[^52], monitor, and debug running applications. It can also be used to submit executions for execution or cancel them.
+> - **Logging**: Flink implements the popular slf4j logging interface and integrates with the logging frameworks [log4j](https://logging.apache.org/log4j/2.x/) or [logback](https://logback.qos.ch/).
+> - **Metrics**: Flink features a sophisticated metrics system to collect and report system and user-defined metrics. Metrics can be exported to several reporters, including [JMX](https://en.wikipedia.org/wiki/Java_Management_Extensions), Ganglia, [Graphite](https://graphiteapp.org/), [Prometheus](https://prometheus.io/), [StatsD](https://github.com/etsy/statsd), [Datadog](https://www.datadoghq.com/), and [Slf4j](https://www.slf4j.org/).
+> - **REST API**: Flink exposes a REST API to submit a new application, take a savepoint of a running application, or cancel an application. The REST API also exposes meta data and collected metrics of running or completed applications.
+
+:one: web UI :  Flink 有一个Web UI 去检查，监控，debug 一个正在运行的应用。这个Web UI 也可以用来提交执行任务或者取消执行任务
+
+:two: 日志 ：Flink 实现了流行的slf4j  接口并且集成了 log4j/logback 日志框架。
+
+:three: 矩阵 ： Flink 有一个复杂的矩阵系统去收集、报告系统和用户自定义矩阵。可以使用一些报告工具（ [JMX](https://en.wikipedia.org/wiki/Java_Management_Extensions), Ganglia, [Graphite](https://graphiteapp.org/), [Prometheus](https://prometheus.io/), [StatsD](https://github.com/etsy/statsd), [Datadog](https://www.datadoghq.com/), and [Slf4j](https://www.slf4j.org/).）导出
+
+:four: REST API ： Flink为提交一个新应用、在一个正在运行的应用中提交一个保存点、或者取消一个应用暴露了REST API。这些 REST API可以暴露元数据，并且收集正在运行/已经完成的应用的矩阵信息。
 
 
 
@@ -365,4 +458,23 @@ GROUP BY SESSION(clicktime, INTERVAL '30' MINUTE), userId
 [^36]: business ：业务； 商务
 [^37]:verbose : 冗长的
 [^38]: such that: 以便于
+
+[^39]: budget: 预算
+[^40]: supervise : 监督
+[^41]: ubiquitous : 无处不在的
+[^42]:battle-proven : 久经证明的
+[^43]: Migrate：迁移 
+[^44]: Suspend : 暂停
+[^45]: Resume ： 恢复 v / 简历 n
+[^46]:  not a trivial 不是小事 ； trivial ： 细小的，琐碎的
+[^47]: Often one : 通常
+[^48]: compatible 兼容的
+[^49]: Evolution : 发展/演化 ； revolution ： 革命 
+[^50]: anticipate : 预知，预料
+[^51]: root-cause : 根本原因
+[^52]: investigate : 调查，追查
+
+[^53]:inspect : 检查 
+
+
 
