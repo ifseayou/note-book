@@ -292,6 +292,19 @@ where not in (
 
 ![](img/hive/3.jpg)	**先执行distinct ，后执行order by ，最后limit**
 
+### distinct 多个字段
+
+distinct 多个字段对所有字段都起作用，并不是一个；如 `select distinct field_a,field_b from table;` 
+
+```sql
+a1,b1;
+a1,b2;
+a2,b2;
+-- 只要有不同就会被选择出来
+```
+
+
+
 ### having 在[impala、postgreSQL] 和 [hive、mysql] 中的不同
 
 ```sql

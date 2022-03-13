@@ -31,11 +31,9 @@ TensorFlow是Google开源基于数据流图的科学计算库，适合用于机�
 
 ### 各个机器学习库的对比
 
-![](img/tenf/3.png)
+![](img/tenf/3.png) 
 
 具体参见：[TensorFlow与主流的深度学习框架的对比](https://zhuanlan.zhihu.com/p/25547838)
 
 对人工智能有了解，比较好的数学知识，对机器学习（吴恩达的视屏 + cs156） + 深度学习。  
-
-
 
