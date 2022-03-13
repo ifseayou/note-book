@@ -1,10 +1,10 @@
 # Apollo
 
+一句话介绍：**Apollo是 一个配置管理中心**
+
 ## 01-Apollo是什么？
 
 Apollo（阿波罗）是携程框架部门研发的分布式配置中心，能够集中化管理应用不同环境、不同集群的配置，配置修改后能够实时推送到应用端，并且具备规范的权限、流程治理等特性，**适用于微服务配置管理场景**。
-
-简言之：Apollo是 一个配置管理中心，主要用来统一配置。
 
 Apollo支持4个维度管理Key-Value格式的配置：
 
@@ -70,7 +70,7 @@ dev.meta=http://192.168.1.212:8282
 
 配置文件的层级关系
 
-![](img/apo/4.png)
+![](img/apo/4.png) 
 
 代码逻辑
 
@@ -110,7 +110,7 @@ Apollo上面的配置信息：
 
 项目的结构：
 
-![](img/apo/7.png)
+![](img/apo/7.png) 
 
 代码：
 
@@ -182,7 +182,7 @@ apollo.bootstrap.namespaces = application
 
 最终访问的结果：
 
-![](img/apo/8.png)
+![](img/apo/8.png) 
 
 ### 4.2 spring boot读取Apollo配置的案例2：
 
@@ -192,7 +192,7 @@ Apollo的配置信息：
 
 项目结构：
 
-![](img/apo/7.png)
+![](img/apo/7.png) 
 
 代码：
 
