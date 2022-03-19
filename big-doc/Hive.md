@@ -512,6 +512,23 @@ having count(*)>3
 
 
 
+#### hive支持，impala不支持
+
+```sql
+select  A, B , count( distinct A) over()
+from (
+select 1 as A ,'a' as B union all
+select 2 as A ,'b' as B union all
+select 1 as A ,'c' as B union all
+select 3 as A ,'d' as B union all
+select 3 as A ,'e' as B
+) t
+```
+
+
+
+
+
 
 
 
