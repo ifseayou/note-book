@@ -183,6 +183,7 @@ MSCK REPAIR TABLE ods.live_input_warehouse_detail_da;
 alter table ods.live_input_warehouse_detail_da add PARTITION (date_id = '2021-07-22')
 
 -- 如果以上都不行，试试删除了分区，然后重新建立一下
+
 ```
 
 

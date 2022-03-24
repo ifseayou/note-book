@@ -99,7 +99,7 @@ commit;
 
   * orientation、
 * distribution_key、
-  * clustering_key、-> [目测这个字段更多的是为了行存表的优化](官方文档中列存表的clustering_key为空，且行存表的时候clustering_key 列 查询时遵循坐匹配原则)
+  * clustering_key-> [目测这个字段更多的是为了行存表的优化](官方文档中列存表的clustering_key为空，且行存表的时候clustering_key 列 查询时遵循坐匹配原则)
 * event_time_column
 
 [hologre 中 DDL语法及各个表属性的介绍](https://help.aliyun.com/document_detail/160754.html)

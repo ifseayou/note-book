@@ -938,3 +938,4 @@ where room_id = 123 and
 讲述Unix awk、sort、管道和MapReduce的相似性。
 
 MPP数据库(大规模并行处理（MPP， massively parallel processing)专注于在一组机器上并行执行分析SQL查询，而MapReduce和分布式文件系统的组合则更像是一个可以运行任意程序的通用操作系统,批处理框架看起来越来越像MPP数据库了
+
