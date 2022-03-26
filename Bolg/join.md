@@ -1,6 +1,10 @@
 # Join
 
-🔞本文讨论*表表关联* 在存储引擎层面是如何实现的，不讨论`left join`,`inner join`,`left semi join`等相关知识
+🔞本文讨论*表表关联* 在存储引擎层面是如何实现的，不讨论`left join`,`inner join`,`left semi join`等相关知识。
+
+### 一、嵌套循环关联
+
+嵌套循环关联原理上和双重`for` 循环非常类似，下面简述几种嵌套循环关联的关联算法。
 
 #### 1、简单嵌套循环关联(Simple Nested-Loop Join)
 
@@ -151,7 +155,7 @@ select * from t1 where a>=1 and a<=100;
 
 ------
 
-#### x something 
+### 二、something have to say
 
 🤣上面涉及的BNLJ、INLJ、BKA+MRR都是MySQL正在使用的Join方式。MySQL在国内应该是普及度最大的开源数据库，故这些内容非常值得了解。
 
@@ -169,15 +173,98 @@ select * from t1 join t2 on (t1.b=t2.b) where t2.b>=1 and t2.b<=2000;
 
 :b: `(t1.b=t2.b)` 满足时，进一步判断`t2.b in [1,2000]`中，是放入结果集，否则跳过
 
-其中:a:步骤的*是否相等*判断次数是 $1000 \times 1000,000 = 1000,000,000 $ 次，试想一下，如果在`join_buffer`维护的是哈希表的话，那么10亿次判断，不就是1000,000次hash查找了吗？这就说到了众多存储引擎使用的 *Hash Join* 就是这个思路。
+其中:a:步骤的*是否相等*判断次数是 $1000 \times 1000,000 = 1000,000,000 $ 次，试想一下，如果在`join_buffer`维护的是哈希表的话，那么10亿次判断，不就是1000,000次hash查找了吗？这就说到了众多存储引擎使用的 *Hash Join* 就是这个思路的实现。
 
-#### 5、哈希关联(Hash Join )[^3]
+### 三、哈希关联(Hash Join )[^3][^4][^5]
+
+哈希关联算是一个比较古老的概念，诞生于上世纪80年代，那时候关系型数据库也只是发展了十几年。有三种常见的Hash Join有三种，分别是:one: `Classic Hash Join`、:two:`Grace Hash Join`、:three: `Hybrid GRACE Hash Join` 
+
+哈希关联有2个特征：
+
+:a: 至少1个等值关联谓词；:warning: 重要特征
+
+:b: 分为2个阶段，
+
+* 第:one:阶段叫做**build phase(构建阶段)** , 基于驱动表R构建内存哈希表
+* 第:two:阶段叫做 **probe phase(探测阶段)**，
+
+#### 5、经典/简单哈希关联(classic/simple hash join)
+
+经典哈希关联是最古老哈希关联算法，该算法要求驱动表(小表[^6])，并且*要求驱动表R构建的哈希表能够放入到内存*中，其过程如下：
+
+:one: 构建阶段：根据驱动表R的关联键构建内存哈希表，其中key为关联键，value为当前行
+
+:two: 探测阶段：扫描被驱动表S的每一行，然后根据关联键在(构建阶段形成的)哈希表中查找，若匹配放入到结果集，否则继续下一行，直到S的最后一行。
+
+:three: 若内存无法容纳基于R构建的Hash表，发生类似于BNLJ的切块过程[#2、块嵌套循环关联(Block Nested-Loop Join)]
+
+> [^6]: 小表的衡量标准并不是记录数，而是Bytes数
+
+举个来自于MySQL官网的:chestnut:
+
+```sql
+select given_name, country_name
+from  persons join countries 
+on persons.country_id = countries.country_id;
+```
+
+如上查询的构建阶段和探测阶段图示如下：
+
+<img src="img/join/01.jpg" width = 100% height = 80% alt="图片名称" align=center />
+
+🎈 Simple Hash Join的问题是如果驱动表构建的哈希表大于内存大小，则会发生哈希表分块过程，那么扫描被驱动表S的次数就从一次增长为$N = ceiling(\frac{hashTableSize}{memerySize})$次，优化这个过程的方式使用Grace Hash Join
+
+#### 6、优雅哈希关联(Grace Hash Join)
+
+“优雅”哈希关联，是我自己翻译的，Grace有优雅、恩惠的意思，至于为什么叫做"Grace Hash Join" 应该是因GRACE Database第一次实现了这种算法而得名，维基百科上的说法是：
+
+> after the GRACE database machine for which it was first implemented
+
+其过程如下；
+
+:one: 扫描驱动表R，并使用 A Hash函数对关联键partition(partition的大小应该趋近于内存大小)，每个partition刷写到磁盘
+
+:two: 被驱动表S，执行和步骤:one:相同的操作，:warning: 使用相同的hash函数
+
+:three: 
+
+* :a: 构建阶段：将R的分区 r~x~  加载到内存中并构建Hash表:warning: 不同于步骤:one::two: 的hash函数 
+
+* :b: 探测阶段：对S的分区 s~x~[^7]  扫描，在r~x~ 形成的Hash表中查找，若找到放入结果集，否则下一行知道分区最后一行
+
+:four: 重复执行步骤:three:，直到R和S的最后一个分区
+
+> [^7]: 注意这里使用的都是 x,表示的是R和S的分区是相对应的，因为使用相同的hash函数，分区之后的分区/桶编号是一一对应
+
+上述过程的图示如下:
+
+<img src="img/join/02.jpg" width = 100% height = 80% alt="图片名称" align=center />
+
+#### 7、混合哈希关联(Hybrid Hash Join) 
+
+从混合2字就可以看出，不难guess混合哈希关联是将经典哈希关联和优雅哈希关联想结合进行使用，其过程如下:
+
+:one: 扫描驱动表R，并使用 A Hash函数对关联键partition(partition的大小趋近于内存大小)，加载内存基于B Hash函数**构建**哈希表
+
+:two: 对于被驱动表S，使用A Hash函数partition,并对每个分区进行**探测**，直到最后一个分区
+
+🎈可见混合哈希关联相较于优雅哈希关联的精髓是:a: **不落盘**，:b:是一个边分区，边构建探测的过程。如此就降低了IO消耗。
+
+### 四、something have to speak
+
+至此，我们不深不浅的剖析了在SQL引擎层面不同的关联算法，目前最综合实力最强的当属混合哈希关联，最菜但最傻白甜的是简单嵌套循环关联，BKA理解起来有些费劲也是MySQL8以前对关联的优化策略，但是MySQL8之后，开始支持哈希关联，现如今一般而言无论是OLTP引擎还是OLTP引擎都已经支持哈希关联了，毕竟coder们对高效都是一定的执念的。
+
+
+
+以上就是isea_you关于关联算法的一些学习、思考及启发，欢迎reader们吐槽。
 
 
 
 
 
+-----
 
+[^3]: wiki 地址 https://en.wikipedia.org/wiki/Hash_join
 
-[^3]: https://en.wikipedia.org/wiki/Hash_join
-
+[^4]: hive confluence https://cwiki.apache.org/confluence/display/Hive/Hybrid+Hybrid+Grace+Hash+Join%2C+v1.0
+[^5]: MySQL Blog Archive https://dev.mysql.com/blog-archive/hash-join-in-mysql-8/
