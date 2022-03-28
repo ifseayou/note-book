@@ -1,12 +1,14 @@
 # Join
 
+🔞You need to be at least 18 years to access this passage。
+
 🔞本文讨论*表表关联* 在存储引擎层面是如何实现的，不讨论`left join`,`inner join`,`left semi join`等相关知识。
 
 ### 一、嵌套循环关联
 
 嵌套循环关联原理上和双重`for` 循环非常类似，下面简述几种嵌套循环关联的关联算法。
 
-#### 1、简单嵌套循环关联(Simple Nested-Loop Join)
+#### 1.1、简单嵌套循环关联(Simple Nested-Loop Join)
 
 t1 和 t2的表结构如下，其中t1中100条记录，t2中1000条记录。
 
@@ -38,7 +40,7 @@ select * from t1 straight_join t2 on (t1.a=t2.a);
 
 🎈 *简单嵌套关联*是最简单，最基本的关联方式，直白的说就是2个循环嵌套，复杂度高，所以多数存储引擎都不会使用。
 
-#### 2、块嵌套循环关联(Block Nested-Loop Join)
+#### 1.2、块嵌套循环关联(Block Nested-Loop Join)
 
 由于SNLJ(simple nested-loop join) 的性能问题，MySQL对其进行了一定的优化，流程如下：
 
@@ -81,7 +83,7 @@ select * from t1 straight_join t2 on (t1.a=t2.a);
 
 🎈可以发现BNLJ相对于SNLJ来说的优势是，BNLJ的优势是将驱动表分块放入内存中，批量的和被驱动表比对，而不需要像SNLJ那样一次次的从驱动表中获取数据。
 
-#### 3、索引嵌套循环关联(Index Nested-Loop Join)
+#### 1.3、索引嵌套循环关联(Index Nested-Loop Join)
 
 t1 和 t2的表结构如下，其中t1中100条记录，t2中1000条记录。
 
@@ -121,7 +123,7 @@ select * from t1 straight_join t2 on (t1.a = t2.a);
 
 🎈 索引嵌套循环关联使用了索引，能够加速关联过程，是一个不错的选择。
 
-#### 4、批量key值访问-索引嵌套循环关联(Batched Key Access)
+#### 1.4、批量key值访问-索引嵌套循环关联(Batched Key Access)
 
 Batched Key Accesss(BKA)算法，是对INLJ(Index Nested Loop Join) 算法的优化。INLJ的逻辑是，从驱动表`t1`，一行行取出a的值，再到被驱动表t2做`join`，对于表`t2`来说，每次都是匹配一个值，这样效率不高，回想BNLJ中我们将驱动表加载到`join_buffer`中，就能利用MRR[^2], 一起传给`t2`，从而达到匹配多个值的目标。
 
@@ -129,7 +131,7 @@ Batched Key Accesss(BKA)算法，是对INLJ(Index Nested Loop Join) 算法的优
 
 > [^2]:Multi-Range Read :多范围读  
 
-##### 4.1-MRR(Multi-Range Read)
+##### 1.4.1-MRR(Multi-Range Read)
 
 ```sql
 create table t1(id int primary key, a int, b int, index(a)); 
@@ -188,7 +190,7 @@ select * from t1 join t2 on (t1.b=t2.b) where t2.b>=1 and t2.b<=2000;
 * 第:one:阶段叫做**build phase(构建阶段)** , 基于驱动表R构建内存哈希表
 * 第:two:阶段叫做 **probe phase(探测阶段)**，
 
-#### 5、经典/简单哈希关联(classic/simple hash join)
+#### 3.1、经典/简单哈希关联(classic/simple hash join)
 
 经典哈希关联是最古老哈希关联算法，该算法要求驱动表(小表[^6])，并且*要求驱动表R构建的哈希表能够放入到内存*中，其过程如下：
 
@@ -214,7 +216,7 @@ on persons.country_id = countries.country_id;
 
 🎈 Simple Hash Join的问题是如果驱动表构建的哈希表大于内存大小，则会发生哈希表分块过程，那么扫描被驱动表S的次数就从一次增长为$N = ceiling(\frac{hashTableSize}{memerySize})$次，优化这个过程的方式使用Grace Hash Join
 
-#### 6、优雅哈希关联(Grace Hash Join)
+#### 3.2、优雅哈希关联(Grace Hash Join)
 
 “优雅”哈希关联，是我自己翻译的，Grace有优雅、恩惠的意思，至于为什么叫做"Grace Hash Join" 应该是因GRACE Database第一次实现了这种算法而得名，维基百科上的说法是：
 
@@ -240,9 +242,9 @@ on persons.country_id = countries.country_id;
 
 <img src="img/join/02.jpg" width = 100% height = 80% alt="图片名称" align=center />
 
-#### 7、混合哈希关联(Hybrid Hash Join) 
+#### 3.3、混合哈希关联(Hybrid Hash Join) 
 
-从混合2字就可以看出，不难guess混合哈希关联是将经典哈希关联和优雅哈希关联想结合进行使用，其过程如下:
+从*混合*2字就可以看出，不难guess混合哈希关联是将经典哈希关联和优雅哈希关联想结合进行使用，其过程如下:
 
 :one: 扫描驱动表R，并使用 A Hash函数对关联键partition(partition的大小趋近于内存大小)，加载内存基于B Hash函数**构建**哈希表
 
@@ -250,21 +252,103 @@ on persons.country_id = countries.country_id;
 
 🎈可见混合哈希关联相较于优雅哈希关联的精髓是:a: **不落盘**，:b:是一个边分区，边构建探测的过程。如此就降低了IO消耗。
 
-### 四、something have to speak
+### 四、归并关联(Merge Join)
 
-至此，我们不深不浅的剖析了在SQL引擎层面不同的关联算法，目前最综合实力最强的当属混合哈希关联，最菜但最傻白甜的是简单嵌套循环关联，BKA理解起来有些费劲也是MySQL8以前对关联的优化策略，但是MySQL8之后，开始支持哈希关联，现如今一般而言无论是OLTP引擎还是OLTP引擎都已经支持哈希关联了，毕竟coder们对高效都是一定的执念的。
+归并关联也称为排序归并关联(sort-merge-join)，同样的要求等值谓词，即等值关联或自然关联，也有2个阶段：
 
+:a: 排序阶段：通过关联键对R和S排序；:warning: 由于索引的存在关联键可能已经是有序的
 
+:b: 合并阶段：扫描已经排好序的R和S，输出关联键匹配的记录
 
-以上就是isea_you关于关联算法的一些学习、思考及启发，欢迎reader们吐槽。
+其中过程:b:的细节是比较复杂的，具体看下图中的伪代码和例子
 
+<img src="img/join/03.jpg" width = 100% height = 80% alt="图片名称" align=center />
 
+> `mark` 每个连续值块的起始值，初始化为null；
+>
+> `r` 、`s` 分别是R和S的当前指针位置，初始值指向记录头
+>
+> `advance r` 表示指针向前移动一位
+>
+> 建议按照图中的例子把伪代码逻辑人肉执行一遍，可以获的更深入的理解。该图来自油管教学视频截图[^9]，视频的质量堪称上乘而且是每次的Speaker都是不同的大叔，加之Berkeley的标签我猜想应该是来自于加州大学伯克利分校的计算机科学教研组，有兴趣的同学可以开启刷剧mode。
+>
+> 细心的读者可以发现该过程在思想上和归并排序是一致的，只是coding的细节有不同的地方。
 
+### 五、分布式场景下的关联
 
+上面谈及到的关联算法都是基于单节点下关联算法，大规模数据场景下的关联就不能采取上述的关联算法了，毕竟对于数据密集型应用必然和分布式紧密相关，下面我们介绍一些分布式计算引擎(MapReduce、Tez、Spark-SQL)在做关联的时候使用到的一些算法，下面我们重点说一下Spark-SQL 的三种关联算法[^10]，分别是广播哈希关联，洗牌哈希关联，排序排序关联，三种关联方式都依赖于单节点下的关联算法，所以理解前面文章提及的算法是理解分布式场景下关联算法的必要条件。另外你得理解shuffle[^11]的过程
 
------
+> [^11]:shuffle : 洗牌，在MapReduce中对的shuffle定义是`map`之后，`reduce`方法之前，简述来说就是按照key排序，然后相同key聚到一块，由于不同node/partition 的相同key要聚到一块，过程非常类似于洗牌，因此叫做shuffle。
 
-[^3]: wiki 地址 https://en.wikipedia.org/wiki/Hash_join
+#### 5.1-广播哈希关联(Broadcast Hash Join)[^12]
+
+卓越的工程师起的名字必然都是见名识意的，广播哈希关联算法，对于一个没有了解该算法的人应该也能知道就是shuffle + hash join的玩法，该关联算法适用于事实表和维度[^13]表关联的场景，有2个要求:one:`spark.sql.autoBroadcastJoinThreshold `限定小表的size，:two: 等值关联但不是`full join` ，该算法2个阶段如下：
+
+:a: 广播阶段：将维度(小)表广播到每个 excutor
+
+:b: Hash Join 阶段：在每个executor上执行hash join(构建阶段 + 探测阶段) => Grace/Hybrid Hash Join过程
+
+<img src="img/join/04.jpg" width = 100% height = 80% alt="图片名称" align=center />
+
+整个过程如上图所示，其中 10~1~ 表示10来自DataFrame1，30~2~表示来自DataFrame2；2个分区，2个task，1个stage(没有shuffle)。
+
+```sql
+val data1 = Seq(10, 20, 20, 30, 40, 10, 40, 20, 20, 20, 20, 50)
+val data2 = Seq(30, 20, 40, 50)
+```
+
+> [^13]: 事实表和维度表是维度模型中的概念，不了解的伙伴可以将事实表看成是大表；维度表是小表
+
+#### 5.2-洗牌哈希关联(Shuffle Hash Join)[^14]
+
+洗牌哈希关联同样遵循见名识意的规律，直白来说就是shuffle + hash join ，同样地2个条件:one: 等值连接；:two:无数据倾斜[^16] ，洗牌哈希关联划分了2个阶段：
+
+:a: shuffle阶段：对所有表进行shuffle，shuffle之后所有表相同key的记录会去往同一个partition
+
+:b: Hash Join阶段： 在每个executor上执行Join(构建阶段 + 探测阶段) => Grace/Hybrid Hash Join过程
+
+上述:a::b:过程具体的图示如下：
+
+<img src="img/join/05.jpg" width = 100% height = 80% alt="图片名称" align=center />
+
+> [^16]:data skew : 这里特指在shuffle中由于其中部分key对应的记录数过多，导致key分布的不均衡 
+
+#### 5.3-洗牌排序归并关联(shuffle Sort Merge Join)[^15]
+
+从该关联算法的名字行推断，洗牌排序归并算法分为2/3个阶段：
+
+:a: Shuffle 阶段：对所有的表R、S进行shuffle
+
+:b: sort-merge-join 阶段
+
+* :one:Sort 阶段：对shuffle之后的结果按照`key`排序
+* :two: 归并阶段：遍历R、S，输出关联键匹配的记录
+
+<img src="img/join/06.jpg" width = 100% height = 80% alt="图片名称" align=center />
+
+上图展示了shuffle阶段和sort阶段，具体的最后的merge细节，可回看 sort-merge-join。
+
+### 八、something have to speak
+
+至此，我们不深不浅的剖析了在SQL/计算引擎层面不同的关联算法，目前最综合实力最强的当属混合哈希关联和归并哈希关联，最菜最傻白甜的是简单嵌套循环关联，BKA理解起来有些费劲也是MySQL8以前对关联的优化策略，但是MySQL8之后，开始支持哈希关联了。对关联算法来说，你可以有两个角度去分类，:a:单机场景下关联算法和:b:分布式场景下的关联算法；按照效率去分，:one:嵌套类；:two:哈希类；:three: 排序类。
+
+现如今一般而言无论是OLTP引擎还是OLTP引擎都已经支持哈希关联了/排序归并关联，毕竟coder们对高效都是一定的执念的。 
+
+💕以上就是isea_you关于关联算法的一些学习、思考及启发，欢迎reader们吐槽。
+
+😒曾经有几份爱情摆在我的面前，我没有好好珍惜，直到做了程序员才后悔莫及
+
+----
+
+**references:**
+
+[^3]: hash wiki 地址 https://en.wikipedia.org/wiki/Hash_join
 
 [^4]: hive confluence https://cwiki.apache.org/confluence/display/Hive/Hybrid+Hybrid+Grace+Hash+Join%2C+v1.0
 [^5]: MySQL Blog Archive https://dev.mysql.com/blog-archive/hash-join-in-mysql-8/
+[^9]: sort merge join video : https://www.youtube.com/watch?v=jiWCPJtDE2c
+[^10]: 分布式场景下的join 参考 https://www.linkedin.com/pulse/spark-sql-3-common-joins-explained-ram-ghadiyaram
+[^12]:spark-broadcast-hash-join 参考： https://www.hadoopinrealworld.com/how-does-broadcast-hash-join-work-in-spark/
+[^14]: spark-shuffle-hash-join 参考: https://www.hadoopinrealworld.com/how-does-shuffle-hash-join-work-in-spark/
+[^15]: spark-shuffle-sort-merge-join参考： https://www.hadoopinrealworld.com/how-does-shuffle-sort-merge-join-work-in-spark/
+[^8]: consecutive 连续的
