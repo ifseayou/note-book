@@ -61,22 +61,30 @@
 >
 > A better approach is known as the "grace hash join", after the GRACE database machine for which it was first implemented.
 >
-> This algorithm avoids rescanning the entire {\displaystyle S}![S](https://wikimedia.org/api/rest_v1/media/math/render/svg/4611d85173cd3b508e67077d4a1252c9c05abca2) relation by first partitioning both {\displaystyle R}![R](https://wikimedia.org/api/rest_v1/media/math/render/svg/4b0bfb3769bf24d80e15374dc37b0441e2616e33) and {\displaystyle S}![S](https://wikimedia.org/api/rest_v1/media/math/render/svg/4611d85173cd3b508e67077d4a1252c9c05abca2) via a hash function, and writing these partitions out to disk. The algorithm then loads pairs of partitions into memory, builds a hash table for the smaller partitioned relation, and probes the other relation for matches with the current hash table. Because the partitions were formed by hashing on the join key, it must be the case that any join output tuples must belong to the same partition.
+> This algorithm avoids rescanning the entire S relation by first partitioning both R and S via a hash function, and writing these partitions out to disk. The algorithm then loads pairs of partitions into memory, builds a hash table for the smaller partitioned relation, and probes the other relation for matches with the current hash table. Because the partitions were formed by hashing on the join key, it must be the case that any join output tuples must belong to the same partition.
 >
 > It is possible that one or more of the partitions still does not fit into the available memory, in which case the algorithm is recursively applied: an additional orthogonal hash function is chosen to hash the large partition into sub-partitions, which are then processed as before. Since this is expensive, the algorithm tries to reduce the chance that it will occur by forming the smallest partitions possible during the initial partitioning phase.
 
+优雅哈希关联
 
+在GRACE数据库机器上第一次实现的优雅关联算法算法是一种更好的算法。
 
+这个算法通过使用哈希函数对R和S进行分区，避免扫描整个$S$，并且将所有的分区写入磁盘。然后将对应的分区加载到磁盘中，为较小的那个表构建hash表，然后用另外一个表在内存散列表中探测，因为为是在关联键上进行的散列，能够关联上的一定是来自同一个分区编号
 
+一个或者多个分区无法适应可用内存也是可能的，此时会迭代使用这个算法，另外的一个散列函数来讲更大的分区划分为子分区，然后香之前那样处理。因为这个操作是昂贵的，所以这个算法在最初始的分区阶段尝试在最下的那个表上建立最小的分区。
 
 > ## Hybrid hash join
 >
 > The hybrid hash join algorithm[[1\]](https://en.wikipedia.org/wiki/Hash_join#cite_note-1) is a refinement of the grace hash join which takes advantage of more available memory. During the partitioning phase, the hybrid hash join uses the available memory for two purposes:
 >
-> 1. To hold the current output buffer page for each of the {\displaystyle k}![k](https://wikimedia.org/api/rest_v1/media/math/render/svg/c3c9a2c7b599b37105512c5d570edc034056dd40) partitions
+> 1. To hold the current output buffer page for each of the k partitions
 > 2. To hold an entire partition in-memory, known as "partition 0"
 >
 > Because partition 0 is never written to or read from disk, the hybrid hash join typically performs fewer I/O operations than the grace hash join. Note that this algorithm is memory-sensitive, because there are two competing demands for memory (the hash table for partition 0, and the output buffers for the remaining partitions). Choosing too large a hash table might cause the algorithm to recurse because one of the non-zero partitions is too large to fit into memory.
+
+没啥好翻译的了，已经知道意思混合散列关联怎么玩的了，就是结合了GRACE Hash Join + Classic Hash Join
+
+
 
 
 

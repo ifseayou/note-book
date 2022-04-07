@@ -78,15 +78,23 @@
 
 并行数据流
 
-Flink中的程序天生就是并行的和分布式的，在执行期间，一个流有一个或者多个流分区，一个操作符有一个或者多个操作子任务。操作子任务独立于其他操作子任务，并且是不同的线程执行，有可能是不同的机器或者容器中。
+Flink中的程序天生就是并行的和分布式的，在执行期间，一个流有一个或者多个流分区，一个算子有一个或者多个算子子任务。算子子任务独立于其他算子子任务，并且是不同的线程执行，有可能是不同的机器或者容器中。
 
+算子子任务的数量是该算子的并行度。同一个程序的不同算子可能有不同级别的并行度。
 
+<img src="./img/flk/7.jpg" width = 80% height = 45% alt="图片名称" align=center />
 
+>Streams can transport data between two operators in a `one-to-one `(or forwarding) pattern, or in a `redistributing` pattern:
+>
+>* **One-to-one** streams (for example between the Source and the map() operators in the figure above) preserve the partitioning and ordering of the elements. That means that subtask[1] of the map() operator will see the same elements in the same order as they were produced by subtask[1] of the Source operator.
+>* **Redistributing** streams (as between map() and keyBy/window above, as well as between keyBy/window and Sink) change the partitioning of streams. Each operator subtask sends data to different target subtasks, depending on the selected transformation. Examples are keyBy() (which re-partitions by hashing the key), broadcast(), or rebalance() (which re-partitions randomly). In a redistributing exchange the ordering among the elements is only preserved within each pair of sending and receiving subtasks (for example, subtask[1] of map() and subtask[2] of keyBy/window). So, for example, the redistribution between the keyBy/window and the Sink operators shown above introduces non-determinism regarding the order in which the aggregated results for different keys arrive at the Sink.
 
+在2个流之间传输数据可以通过 ，一对一的方式或者是重新分发的模式
 
+* 一对一流（比如在上图中的Source和map算子之间）保存元素的分区和排序。这意味着数据被source算子的子任务处理之后，map算子会看到和其相同的分区和排序
 
-
-
+* 重心分发流（上图中的map和 keyBy/window之间， keyBy/window 和Sink 之间）改变了流的分区。根据所选的转换，每个算子的子任务发送数据都不同的目标子任务，比如keyby（根据键值散列重心分区），rebalance(随机分区)
+* 
 
 
 

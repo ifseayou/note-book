@@ -328,7 +328,7 @@ val data2 = Seq(30, 20, 40, 50)
 
 上图展示了shuffle阶段和sort阶段，具体的最后的merge细节，可回看 sort-merge-join。
 
-### 八、something have to speak
+### 六、something have to speak
 
 至此，我们不深不浅的剖析了在SQL/计算引擎层面不同的关联算法，目前最综合实力最强的当属混合哈希关联和归并哈希关联，最菜最傻白甜的是简单嵌套循环关联，BKA理解起来有些费劲也是MySQL8以前对关联的优化策略，但是MySQL8之后，开始支持哈希关联了。对关联算法来说，你可以有两个角度去分类，:a:单机场景下关联算法和:b:分布式场景下的关联算法；按照效率去分，:one:嵌套类；:two:哈希类；:three: 排序类。
 
