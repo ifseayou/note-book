@@ -1306,6 +1306,16 @@ Hadoop很像Unix的分布式版本，其中HDFS是分布式文件系统，MapRed
 
 涉及**流-流**连接，**流-表**连接，与**表-表**连接。
 
+:one: 流流连接，实际是窗口的连接，Window join 作用在两个流中有*相同 key* 且处于*相同窗口*的元素上。比如Flink将流流连接细分为滚动Window Join，滑动Window Join，会话Window Join。[Flink的双流Join](https://nightlies.apache.org/flink/flink-docs-master/zh/docs/dev/datastream/operators/joining/)。比如下图是Spark Streaming中一个广告流和一个点击流的连接
+
+<img src="./img/ddia/55.jpg" width = 100% height = 70% alt="图片名称" align=center />
+
+:two:流表连接，实际是流扩展，
+
+
+
+
+
 
 
 
