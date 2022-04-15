@@ -213,13 +213,10 @@ xioaming    2021-08-22  NULL
 ### 侧写视图
 
 ```SQL
-select col_a,col_b,col_c
+select col_A,col_B,col_c
 from (
-    select *
-    from (
-        select "1" as col_A, 'a/b/c/d' as col_B
-    ) t lateral view explode(split(col_B, '/')) x as col_c
-) t1
+    select "1" as col_A, 'a/b/c/d' as col_B
+) t lateral view explode(split(col_B, '/')) x as col_c
 ```
 
 | 1    | a/b/c/d | a    |
