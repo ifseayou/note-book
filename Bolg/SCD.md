@@ -34,7 +34,11 @@ SCD全称：Slowly changing dimension，中译为缓慢变化维度，是数据�
 
 <img src="img/scd/02.jpg" width = 100% height = 80% alt="图片名称" align=center />
 
+### 1.4-SCD 4
 
+> SCD 1 + SCD 2
+
+<img src="img/scd/03.jpg" width = 100% height = 80% alt="图片名称" align=center />
 
 wiki
 
