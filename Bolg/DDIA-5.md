@@ -1,3 +1,5 @@
+# 设计数据密集型应用(五)，DDIA
+
 ### 七、批处理
 
 #### 7.1-关于衍生数据
@@ -48,13 +50,13 @@ MapReduce是一个编程框架，可以使用它编写代码处理HDFS等分布�
 
 :four: 调用Reducer函数遍历排序后的键值对，相同的key，将会在reducer中相邻；reduce的任务数量是可配置的
 
-其中第:two::four:步是自定义数据处理代码的地方，第:three:步Mapper的输出始终在送往Reducer之前进行排序，无须编写。下图是个三个Mapper和三个Reducer的MR任务：
+其中第:two::four:步是自定义数据处理代码的地方，第:three:步Mapper的输出始终在送往Reducer之前进行排序，无须编写。下图是三个Mapper和三个Reducer的MR任务：
 
 <img src="D:/08-work/note-book/book-doc/img/ddia/42.jpg" width = 100% height = 70% alt="图片名称" align=center />
 
 Mapper中的数据去往Reducer的过程可以看做是Mapper将消息发送给Reducer，每当Mapper发出一个键值对，这个键的作用就好像是去往到目标地址(IP地址)
 
-#### 7.4-Reducer端联接：
+#### 7.4-Reducer端连接：
 
 如下图，左侧是事件日志，右侧是用户数据库，任务需要将用户活动和用户档案相关联：
 

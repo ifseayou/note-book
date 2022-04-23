@@ -50,7 +50,9 @@ SCD全称：Slowly changing dimension，中译为缓慢变化维度，是数据�
 
 最常用的是SCD1、SCD2，SCD4也会使用，SCD0，SCD3，SCD6用的很少
 
+### 1.4-zipper table
 
+<img src="img/scd/05.jpg" width = 100% height = 80% alt="图片名称" align=center />
 
 
 
@@ -58,3 +60,4 @@ Reference
 
 [^1]:wiki addr  https://en.wikipedia.org/wiki/Slowly_changing_dimension
 [^2]:YouTube tutorial https://www.youtube.com/watch?v=XqdZF0DJpUs
+
