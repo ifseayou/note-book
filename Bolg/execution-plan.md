@@ -16,15 +16,37 @@ MySQL的执行计划输出[^3]，Oracle官网有详细的描述，可以前往�
 
 ## 2-PostgreSQL执行计划
 
-下图是PostgreSQL的执行计划[^4]的例子
-
 <img src="./img/qp/02.jpg" width = 100% height = 70% alt="图片名称" align=center />
 
-PostgreSQL的执行计划输出[^5]，PostgreSQL官网有详细的描述，可以前往查看
+上图是PostgreSQL的执行计划[^4]的例子，③号图中的执行计划可以缩略理解为④号图，类似编程语言中的函数调用
+
+<img src="./img/qp/03.jpg" width = 100% height = 70% alt="图片名称" align=center />
+
+> 关于PostgreSQL中的 seq_scan,index_scan,bitmap scan[^5]：
+>
+> :one:seq_scan：全表扫描 when select a LOT of data from a table
+>
+> :two:index_scan:  Index Only Scan  when select a handful of rows
+>
+> :three:bitmap scan :  too much row for an index scan to be efficient but too little for a sequential scan，如下图：
+>
+> <img src="./img/qp/04.jpg" width = 100% height = 70% alt="图片名称" align=center />
+
+PostgreSQL的执行计划输出，PostgreSQL官网[^6][^7]有详细的描述，可以前往查看
+
+## 3-impala执行计划
 
 
 
-reference
+
+
+
+
+
+
+
+
+🔞Reference
 
 [^1]:query plan wiki : https://en.wikipedia.org/wiki/Query_plan
 [^2]: mysql query plan : https://www.youtube.com/watch?v=9K26Wb84f50
@@ -32,5 +54,7 @@ reference
 
 [^4]:postgresql query plan : https://www.youtube.com/watch?v=Mll5SqR4RYk&t=632s
 
-[^5]: postgresqlexplain output format : https://www.postgresql.org/docs/10/using-explain.html
+[^5]: seq_scan,inde_scan,bitmap_scan: https://www.cybertec-postgresql.com/en/postgresql-indexing-index-scan-vs-bitmap-scan-vs-sequential-scan-basics/
+[^6]:  postgresql explain output format : https://www.postgresql.org/docs/10/using-explain.html | ↩
+[^7]:  postgresql performance tuning:  https://www.postgresql.org/docs/8.1/performance-tips.html
 
