@@ -208,7 +208,9 @@ name		ordera_date	cost
 xioaming    2021-08-22  NULL
 ```
 
-
+```
+'[\[\]]'
+```
 
 ### 侧写视图
 
