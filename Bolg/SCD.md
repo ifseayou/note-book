@@ -1,4 +1,4 @@
-# SCD
+# SCD-缓慢变化维
 
 SCD全称：Slowly changing dimension，中译为缓慢变化维度，是数据库(记录系统)和数据仓库(衍生系统)领域的问题，比如商品表中，商品的价格这个维度一般是不会变化，但是可能会竞品的降价而变化，我们称商品价格是缓慢变化维[^1][^2]
 
@@ -28,7 +28,7 @@ SCD全称：Slowly changing dimension，中译为缓慢变化维度，是数据�
 
 > 每当记录系统改变一次，数仓中都会增加一**列**
 
-这种方式会丢失数据(下例中业务库的`id=3`第三次变化，数仓中丢失历史值`prev_offc='Gurgaon'`)，并且需要为每个缓慢变化维增加一列，不被推荐使用
+这种方式会丢失数据(下例中业务库的`id=123`第三次变化，数仓中丢失历史值`prev_offc='Gurgaon'`)，并且需要为每个缓慢变化维增加一列，不推荐使用
 
 <img src="img/scd/02.jpg" width = 100% height = 80% alt="图片名称" align=center />
 
@@ -38,9 +38,9 @@ SCD全称：Slowly changing dimension，中译为缓慢变化维度，是数据�
 
 <img src="img/scd/03.jpg" width = 100% height = 80% alt="图片名称" align=center />
 
-关于SCD4的使用场景，举个:chestnut:: 投资银行有很多投资产品被交易，而且这些产品的变动会非常大，比如在使用美元进行Bitcoin交易中，比特币的价格每2分钟会刷新一次，这意味着每两分钟维度表会增加一行，但是在交易的那个时刻你希望使用最新的价格进行分析，同时你希望维护历史值，如此你可以分析2天前买入/卖出和当前买入/卖出之间的价差，如果只是使用SCD2的话，假设有100,0000的产品，每个小时变动10次，那么1个小时SCD2将会有1000,0000行，所以可以分隔为2个表，其中一个表是存储快照，另外一个表存储历史数据，即为SCD1+SCD2
+关于SCD4的使用场景，举个:chestnut:: 投资银行有很多投资产品被交易，而且这些产品的变动会非常大，比如在使用美元进行Bitcoin交易中，比特币的价格每2分钟会刷新一次，若使用SCD2意味着每两分钟维度表会增加一行，但是在交易的那个时刻你希望使用最新的价格进行分析，同时你希望维护历史值，如此你可以分析2天前买入/卖出和当前买入/卖出之间的价差，如果只是使用SCD2的话，假设有100,0000的产品，每个小时变动10次，那么1个小时SCD2将会有1000,0000行，所以可以分隔为2个表，其中一个表是存储快照，另外一个表存储历史数据，即为SCD1+SCD2
 
-### 4-SCD 6
+### 5-SCD 6
 
 > SCD1 + SCD2 + SCD3
 
@@ -48,7 +48,7 @@ SCD全称：Slowly changing dimension，中译为缓慢变化维度，是数据�
 
 最常用的是SCD1、SCD2，SCD4也会使用，SCD0，SCD3，SCD6用的很少
 
-### 4-zipper table
+### 6-zipper table
 
 下例中是使用SCD2制作拉链表的过程
 
@@ -56,7 +56,10 @@ SCD全称：Slowly changing dimension，中译为缓慢变化维度，是数据�
 
 
 
-Reference
+以上就是关于数据仓库缓慢变化维的描述，欢迎吐槽，欢迎关注公众号 ：stackoverflow
+
+🔞Reference
 
 [^1]:wiki addr  https://en.wikipedia.org/wiki/Slowly_changing_dimension
 [^2]:YouTube tutorial https://www.youtube.com/watch?v=XqdZF0DJpUs
+

@@ -34,19 +34,27 @@ PostgreSQL的执行计划输出，PostgreSQL官网[^6][^7]有详细的描述，�
 
 ## 3-impala执行计划
 
-关于impala本身，你必须知道它是一个MPP SQL引擎。impala的执行计划官网上描述的很少，全是俗媚的描述性内容，参考意义不大，阅读impala paper[^8]，观看cloudera出品的教学视频[^9] 是一个更上头的操作，下图中上半部分来于视频，下半部分来自于论文
+关于impala本身，你必须知道它是一个MPP SQL引擎。impala的执行计划官网上描述的很少，全是俗媚的描述性内容，参考意义不大，阅读impala paper[^8]，观看cloudera出品的教学视频[^9] 是一个更上头的操作，要区分impala的 execution plan 和 profile，前者是未执行就可获知，后者需要执行后才能获取。下图中上半部分来于视频，下半部分来自于论文
 
 <img src="./img/qp/05.jpg" width = 100% height = 70% alt="图片名称" align=center />
 
-要区分impala的 execution plan 和 profile，前者是未执行就可获知，后者需要执行后才能获取。执行计划分为2个阶段，如下图：
+就上图做以下几点说明：
+
+:one: 从SQL查询流中可看出，客户端提交的SQL会被Impala前台编译为执行计划，再交给impala后台执行，最后将查询结果/查询简介返回给客户端
+
+:two: 从Impala逻辑视图中看出，impala逻辑上分为3个模块(虚线圈出)：元数模块+执行模块+存储模块
+
+:three: 上图的下半部分暂时了一个SQL在impala的整个生命周期(需要标记出)
 
 <img src="./img/qp/06.jpg" width = 100% height = 70% alt="图片名称" align=center />
+
+上图(上半部分来源于视频，下半部分来源于论文)展示了Impala的执行计划分为2个阶段，
 
 :a:single node plan : 单机上的执行计划
 
 :b:distributed node plan : 分布式执行计划，全局内 哪些查询是并行的，哪些是需要数据交换(exchance)的
 
-
+可以看到distributed plan相对于single plan增加了Exchange，这是因为如果数据分布在不同的节点上，我们需要使用使用类似Grace Hash Join的方式使得相同的key去往同一个节点，这个类似Hive/Spark中shuffle的行为，在impala中称之为exchange
 
 
 
