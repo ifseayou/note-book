@@ -1,5 +1,9 @@
 # SQL/Hive
 
+下面是关于SQL在引擎内部执行的顺序的简易版/必记版：
+
+> from 某表，group by 某字段，开窗 ，聚合函数，having，distinct , order by , limit ，尤其注意当group by 和 开窗相遇时，一定是分组优先
+
 ## 01-hive的架构
 
 如下图是Hive的架构图，即解析器-编译器-优化器-执行器，区别于MySQL的，连接器-分析器-优化器-执行器
@@ -390,9 +394,7 @@ order  by a desc ;
 | Java / PostgreSQL     | 4     |
 | Hive / Impala / MySQL | 4.8   |
 
-
-
-#### hive支持，impala不支持
+### 4.5-窗口函数是否支持`distinct`
 
 ```sql
 select  A, B , count( distinct A) over()
@@ -400,42 +402,44 @@ from (
 select 1 as A ,'a' as B union all
 select 2 as A ,'b' as B union all
 select 1 as A ,'c' as B union all
-select 3 as A ,'d' as B union all
-select 3 as A ,'e' as B
+select 3 as A ,'d' as B
 ) t
 ```
 
-#### null 与 x 关联
+比如以上的SQL查询：Hive是支持的，Impala，MySQL，PostgreSQL暂时没有实现
+
+### 4.6-字符串写入数值类型
+
+```sql 
+create table if not exists  business (
+    name stirng,
+    order_date string,
+    cost float
+);
+insert into business values('xioaming','2021-08-22','');
+```
+
+Hive 会将字符串转为null写入；Impala，MySQL，PostgreSQL会进行类型检查(即报错)
+
+## 05-`null`,`x` 关联
 
 <img src="./img/hive/11.jpg" width = 100% height = 45% alt="图片名称" align=center />
 
-:one: null 和 null 无法相互关联
+在任何SQL(MySQL,PostgreSQL,Hive,Impala)引擎中，`null`和 和任意值都无法关联无法相互关联，包括其本身
 
-:two: null 和 ‘’  无法相互关联
-
-
-
-from 某表，group by 某字段，开窗 ，聚合函数，having，distinct , order by , limit ，尤其注意当group by 和 开窗相遇时，一定是分组优先
+> PostgreSQL中有类型探测，执行以上关联会发生：[Failed to find conversion function from unknown to text](https://stackoverflow.com/questions/18073901/failed-to-find-conversion-function-from-unknown-to-text)
 
 
 
+### 
 
 
-查询索引文件的大小 和 本身表的数据量大小 。
 
 
-### HDFS上有数据，Hive中没有查询到数据
 
-``` sql 
--- 1修复分区
-MSCK REPAIR TABLE ods.live_input_warehouse_detail_da;
 
--- 2手动增加分区
-alter table ods.live_input_warehouse_detail_da add PARTITION (date_id = '2021-07-22')
 
--- 如果以上都不行，试试删除了分区，然后重新建立一下
 
-```
 
 
 
@@ -448,15 +452,6 @@ on if(t1.created_at < '2021-07-01 12:01:01', t5.raw_so_id, t5.order_no) = t1.out
 on (t5.raw_so_id  = t1.outer_order_no) or (t5.order_no = t1.outer_order_no) 
 -- on 条件中不允许出现我or 的语句。
 
-```
-
-### 字符串插入类型为数值类型
-
-```sql 
-insert into default.business values('xioaming','2021-08-22','')
-
-name		ordera_date	cost
-xioaming    2021-08-22  NULL
 ```
 
 ### 不使用order by 找到工资第二的员工

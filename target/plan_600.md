@@ -54,7 +54,7 @@ where Id not in (
     select min(Id) as Id
     from Person
     group by Email
-)：
+);
 ```
 
 ###### [006- `LeetCode`197problem](https://leetcode.com/problems/rising-temperature/submissions/)
@@ -64,7 +64,7 @@ where Id not in (
 :two: lag,    ↑     from down to top direction
 
 ```sql
--- just a windows function 
+-- just a windows function , to avoid the every one or more day such as 2022-05-01 2022-05-04, we use timestampdiff function
 select id
 from (
          select id
@@ -77,6 +77,9 @@ from (
      ) t
 where temperature > yes_temperature
 and date_diff = 1
+;
+-- param2 - param1
+select timestampdiff(day,'2022-05-04','2022-05-05') -- 1
 ```
 
 ###### [007- `LeetCode`595problem](https://leetcode.com/problems/big-countries/submissions/)
