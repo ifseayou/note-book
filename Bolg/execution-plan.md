@@ -1,6 +1,8 @@
 # Execution plan
 
-执行/查询计划老外有三种叫法：Execution plan/query explanation paln/query plan[^1]。这个概念起源于关系型数据库，后来随着开源OLAP引擎同样follow了RDB的传统，实现了查询计划。关于执行计划，要注意：执行计划是*优化器/执行器*打算访问数据的步骤，所以实际并没有真的执行
+执行/查询计划老外有三种叫法：Execution plan/query explanation paln/query plan[^1]。这个概念起源于关系型数据库，后来随着开源OLAP引擎同样follow了RDB的传统，实现了查询计划
+
+:warning:：执行计划是*优化器/执行器*打算访问数据的步骤，所以实际并没有真的执行
 
 ## 1-MySQL 执行计划
 
@@ -34,7 +36,11 @@ PostgreSQL的执行计划输出，PostgreSQL官网[^6][^7]有详细的描述，�
 
 ## 3-impala执行计划
 
-关于impala本身，你必须知道它是一个MPP SQL引擎。impala的执行计划官网上描述的很少，全是俗媚的描述性内容，参考意义不大，阅读impala paper[^8]，观看cloudera出品的教学视频[^9] 是一个更上头的操作，要区分impala的 execution plan 和 profile，前者是未执行就可获知，后者需要执行后才能获取。下图中上半部分来于视频，下半部分来自于论文
+关于impala本身，你必须知道它是一个MPP SQL引擎。impala的执行计划官网上描述的很少，全是俗媚的描述性内容，参考意义不大，阅读impala paper[^8]，观看cloudera出品的教学视频[^9] 是一个更上头的操作，要区分impala的execution plan和execution profile，前者是未执行就可获知，后者需要执行后才能获取。
+
+### 3.1-impala SQL查询流和impala逻辑视图
+
+下图中上半部分来于视频，下半部分来自于论文
 
 <img src="./img/qp/05.jpg" width = 100% height = 70% alt="图片名称" align=center />
 
@@ -44,7 +50,9 @@ PostgreSQL的执行计划输出，PostgreSQL官网[^6][^7]有详细的描述，�
 
 :two: 从Impala逻辑视图中看出，impala逻辑上分为3个模块(虚线圈出)：元数模块+执行模块+存储模块
 
-:three: 上图的下半部分暂时了一个SQL在impala的整个生命周期(需要标记出)
+:three: 上图的下半部分展示了一个SQL在impala的整个生命周期(需要标记出)
+
+### 3.2-impala执行计划的2个阶段
 
 <img src="./img/qp/06.jpg" width = 100% height = 70% alt="图片名称" align=center />
 
@@ -54,15 +62,17 @@ PostgreSQL的执行计划输出，PostgreSQL官网[^6][^7]有详细的描述，�
 
 :b:distributed node plan : 分布式执行计划，全局内 哪些查询是并行的，哪些是需要数据交换(exchance)的
 
-可以看到distributed plan相对于single plan增加了Exchange，这是因为如果数据分布在不同的节点上，我们需要使用使用类似Grace Hash Join的方式使得相同的key去往同一个节点，这个类似Hive/Spark中shuffle的行为，在impala中称之为exchange
-
-
+可以看到distributed plan相对于single plan增加了Exchange，这是因为如果数据分布在不同的节点上，我们需要使用使用类似Grace Hash Join的方式使得相同的key去往同一个节点，这个类似Hive/Spark中shuffle的行为，在impala中标记为exchange，在Spark中也被标记为exchange
 
 ## 4-Spark执行计划
 
+Spark中SQL(DataSet，DataFrame，Cypher)的解析，分析，优化等都是有Catalyst[^10][^11]完成的，下图是Catalyst的逻辑视图
 
+<img src="./img/qp/07.jpg" width = 100% height = 70% alt="图片名称" align=center />
 
-
+> :one:Catalyst会生成多个physical plan，但是最终会选择根据Cost Model(执行时间、资源消耗等)一个
+>
+> :two:Adaptive Query Execution是Spark3.0的功能，Catalyst会在计划执行时收集统计信息，如果发现更好的计划，可以在运行时改变执行计划
 
 
 
@@ -82,4 +92,7 @@ PostgreSQL的执行计划输出，PostgreSQL官网[^6][^7]有详细的描述，�
 
 [^8]: impala parper : http://www.cidrdb.org/cidr2015/Papers/CIDR15_Paper28.pdf
 [^9]: impala tutorial of cloudera : https://www.youtube.com/watch?v=J0n-yORrmcU
+
+[^10]:spark execution video : https://www.youtube.com/watch?v=YgQgJceojJY&list=WL&index=1&t=334s
+[^11]:spark execution blog : https://medium.com/datalex/sparks-logical-and-physical-plans-when-why-how-and-beyond-8cd1947b605a
 

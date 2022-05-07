@@ -61,3 +61,10 @@ and date_diff = 1
 select timestampdiff(day,'2022-05-04','2022-05-05') -- 1
 ```
 
+03-swap-salary
+
+```sql
+update Salary
+set sex = if(sex = 'm','f','m');
+```
+
