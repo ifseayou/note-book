@@ -8,7 +8,7 @@
 
 如下图是Hive的架构图，即解析器-编译器-优化器-执行器，区别于MySQL的，连接器-分析器-优化器-执行器
 
-<img src="./img/hive/1.png" width = 100% height = 70% alt="图片名称" align=center />
+<img src="./img/hive/1.jpg" width = 100% height = 70% alt="图片名称" align=center />
 
 metastrore是存储元数据的数据库，默认使用的是derby，可以更改为***MySQL***，元数据指的是将结构化数据映射成一张表的表名，表所属的数据库(默认为default)，表的拥有者，表的列，分区字段，表的类型(是否为外部表)表所在的目录等。Hive只是和RDB只是在SQL语句上有着类似之处
 
@@ -421,17 +421,25 @@ insert into business values('xioaming','2021-08-22','');
 
 Hive 会将字符串转为null写入；Impala，MySQL，PostgreSQL会进行类型检查(即报错)
 
-## 05-`null`,`x` 关联
+## 05-一些易犯的错误
+
+### 5.1-`null`,`x` 关联
 
 <img src="./img/hive/11.jpg" width = 100% height = 45% alt="图片名称" align=center />
 
-在任何SQL(MySQL,PostgreSQL,Hive,Impala)引擎中，`null`和 和任意值都无法关联无法相互关联，包括其本身
+在任何SQL(MySQL,PostgreSQL,Hive,Impala)引擎中，**`null`和任意值都无法关联无法相互关联，包括其本身**
 
 > PostgreSQL中有类型探测，执行以上关联会发生：[Failed to find conversion function from unknown to text](https://stackoverflow.com/questions/18073901/failed-to-find-conversion-function-from-unknown-to-text)
 
+### 5.2-返回1行&返回0行
+
+<img src="./img/hive/16.jpg" width = 30% height = 45% alt="图片名称" align=left/> 如左图所示 
 
 
-### 
+
+
+
+
 
 
 

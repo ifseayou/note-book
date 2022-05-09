@@ -137,7 +137,7 @@ where salary = (
 );
 
 -- the following sql can't pass oj ,the following picture explain the reason
-select max(salary) as SecondHighestSalary
+select salary as SecondHighestSalary
 from Employee
 where salary = (
     select distinct salary
@@ -172,9 +172,26 @@ end
 -- the following pic explain the sql
 ```
 
-<img src="./img/sql/02.jpg" width = "20%" height = "30%" alt="图片名称" align=center />
+<img src="./img/sql/02.jpg" width = "20%" height = "30%" alt="图片名称" align=left/>
 
 
+
+```sql
+-- the second method
+create function getnthhighestsalary(n int) returns int
+begin
+    return (
+        # write your mysql query statement below.
+        select max(salary )
+        from (
+            select id,salary 
+                 , dense_rank() over(order by salary  desc)  as rk
+            from Employee
+        ) t2
+        where t2.rk = n
+    );
+end
+```
 
 ###### [014- `LeetCode`178problem](https://leetcode.com/problems/rank-scores/)
 

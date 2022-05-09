@@ -68,3 +68,27 @@ update Salary
 set sex = if(sex = 'm','f','m');
 ```
 
+04-nth-highest-salary
+
+```sql
+select max(salary)
+from (
+    select t1.salary
+    from Employee t1
+    inner join Employee t2
+    on t1.salary <= t2.salary
+    group by t1.salary
+    having  count(distinct  t2.salary) = n
+) t
+; -- 这里使用了非等值连接，n=1 比自己(>=)的元素,只有自己，n=2,比自己(>=)的元素是自己和最大值；以此类推
+
+
+select max(salary )
+from (
+    select id,salary 
+         , dense_rank() over(order by salary  desc)  as rk
+    from Employee
+) t2
+where t2.rk = n
+```
+
