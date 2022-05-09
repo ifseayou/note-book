@@ -1,8 +1,8 @@
 # Execution plan
 
-执行/查询计划老外有三种叫法：Execution plan/query explanation paln/query plan[^1]。这个概念起源于关系型数据库，后来随着开源OLAP引擎同样follow了RDB的传统，实现了查询计划
+执行/查询计划老外有三种叫法：Execution plan/query explanation paln/query plan[^1]。这个概念起源于关系型数据库，后来开源OLAP引擎同样follow了RDB的传统，实现了查询计划
 
-:warning:：执行计划是*优化器/执行器*打算访问数据的步骤，所以实际并没有真的执行
+:warning:：执行计划是优化器/执行器**打算**访问数据的步骤，所以实际并没有真的执行
 
 ## 1-MySQL 执行计划
 
@@ -12,7 +12,7 @@
 
 > 实践中，`ref_or_null`类型看到的还是比较少的；为什么无须回表的`index`的要劣于`range`？举个:chestnut:` goods_name`字段上有索引，对于 `select goods_name from goods where goods_name like '%果%'`，即便有索引，且无须回表，但是还需要全索引扫描的
 
-MySQL的执行计划输出[^3]，Oracle官网有详细的描述，可以前往查看
+MySQL更加详细执行计划输出[^3]，Oracle官网有详细的描述，可前往查看
 
 ## 2-PostgreSQL执行计划
 
@@ -32,7 +32,7 @@ MySQL的执行计划输出[^3]，Oracle官网有详细的描述，可以前往�
 >
 > <img src="./img/qp/04.jpg" width = 100% height = 70% alt="图片名称" align=center />
 
-PostgreSQL的执行计划输出，PostgreSQL官网[^6][^7]有详细的描述，可以前往查看
+PostgreSQL的执行计划输出，PostgreSQL官网[^6][^7]有详细的描述，可前往查看
 
 ## 3-impala执行计划
 
@@ -50,7 +50,7 @@ PostgreSQL的执行计划输出，PostgreSQL官网[^6][^7]有详细的描述，�
 
 :two: 从Impala逻辑视图中看出，impala逻辑上分为3个模块(虚线圈出)：元数模块+执行模块+存储模块
 
-:three: 上图的下半部分展示了一个SQL在impala的整个生命周期(需要标记出)
+:three: 上图的下半部分展示了一个SQL在impala的整个生命周期(序号标记了整个生命周期)
 
 ### 3.2-impala执行计划的2个阶段
 
@@ -75,6 +75,8 @@ Spark中SQL(DataSet，DataFrame，Cypher)的解析，分析，优化等都是有
 > :two:Adaptive Query Execution是Spark3.0的功能，Catalyst会在计划执行时收集统计信息，如果发现更好的计划，可以在运行时改变执行计划
 
 
+
+以上就是关于执行计划的一个不深不浅的描述，欢迎吐槽，欢迎关注公众号 ：stackoverflow
 
 
 
