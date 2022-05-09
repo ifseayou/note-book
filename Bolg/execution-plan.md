@@ -36,7 +36,7 @@ PostgreSQL的执行计划输出，PostgreSQL官网[^6][^7]有详细的描述，�
 
 ## 3-impala执行计划
 
-关于impala本身，你必须知道它是一个MPP SQL引擎。impala的执行计划官网上描述的很少，全是俗媚的描述性内容，参考意义不大，阅读impala paper[^8]，观看cloudera出品的教学视频[^9] 是一个更上头的操作，要区分impala的execution plan和execution profile，前者是未执行就可获知，后者需要执行后才能获取。
+关于impala本身，你必须知道它是一个MPP SQL引擎。impala的执行计划官网上描述的很少，全是俗媚的描述性内容，参考意义不大，阅读impala paper[^8]，观看cloudera出品的教学视频[^9] 是一个更上头的操作，要区分impala的execution plan和execution profile，前者是未执行就可获知，后者需要执行后才能获取
 
 ### 3.1-impala SQL查询流和impala逻辑视图
 
@@ -48,7 +48,7 @@ PostgreSQL的执行计划输出，PostgreSQL官网[^6][^7]有详细的描述，�
 
 :one: 从SQL查询流中可看出，客户端提交的SQL会被Impala前台编译为执行计划，再交给impala后台执行，最后将查询结果/查询简介返回给客户端
 
-:two: 从Impala逻辑视图中看出，impala逻辑上分为3个模块(虚线圈出)：元数模块+执行模块+存储模块
+:two: 从Impala逻辑视图中看出，impala逻辑上分为3个模块(虚线圈出)：元数据模块+执行模块+存储模块
 
 :three: 上图的下半部分展示了一个SQL在impala的整个生命周期(序号标记了整个生命周期)
 
@@ -66,7 +66,7 @@ PostgreSQL的执行计划输出，PostgreSQL官网[^6][^7]有详细的描述，�
 
 ## 4-Spark执行计划
 
-Spark中SQL(DataSet，DataFrame，Cypher)的解析，分析，优化等都是有Catalyst[^10][^11]完成的，下图是Catalyst的逻辑视图
+Spark中SQL(DataSet，DataFrame，Cypher)的解析，分析，优化等都是由Catalyst[^10][^11]完成的，下图是Catalyst的逻辑视图
 
 <img src="./img/qp/07.jpg" width = 100% height = 70% alt="图片名称" align=center />
 

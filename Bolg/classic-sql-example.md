@@ -92,3 +92,34 @@ from (
 where t2.rk = n
 ```
 
+05-[consecutive-numbers](https://leetcode.com/problems/consecutive-numbers/submissions/)
+
+```sql
+select distinct num as ConsecutiveNums
+from (
+         select  num
+              , cast(id as signed) - cast(row_number() over(partition  by num order by id) as signed) as diff
+         from Logs
+     ) t
+group by diff,num
+having count(*) >=3;
+
+-- mysql中
+select cast(1 as signed)-(cast(-2 as unsigned));
+-- 会引发：data truncation: BIGINT value is out of range in 的错误
+```
+
+06-[exchange-seats](https://leetcode.com/problems/exchange-seats/)
+
+```sql
+select case
+           when mod(id, 2) != 0 and counts != id then id + 1
+           when mod(id, 2) != 0 and counts = id then id
+           else id - 1 end as id
+     , student
+from seat
+   , ( select count(*) as counts
+       from seat ) as seat_counts
+order by id asc;
+```
+
