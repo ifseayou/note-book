@@ -408,7 +408,13 @@ select 3 as A ,'d' as B
 
 比如以上的SQL查询：Hive是支持的，Impala，MySQL，PostgreSQL暂时没有实现
 
-### 4.6-字符串写入数值类型
+### 4.6-窗口嵌套
+
+窗口函数的嵌套，只Hive中是支持的，PostgreSQL(`window functions are not allowed in window definitions`)，MySQL，Impala 中只能多嵌套一层
+
+<img src="./img/hive/17.jpg" width = 100% height = 45% alt="图片名称" align=center />
+
+### 4.7-字符串写入数值类型
 
 ```sql 
 create table if not exists  business (
@@ -435,6 +441,9 @@ Hive 会将字符串转为null写入；Impala，MySQL，PostgreSQL会进行类�
 
 <img src="./img/hive/16.jpg" width = 30% height = 45% alt="图片名称" align=left/> 如左图所示 
 
+### 5.3-union all 的类型
+
+任何引擎，`union all`的类型必须保持一致
 
 
 
@@ -442,8 +451,47 @@ Hive 会将字符串转为null写入；Impala，MySQL，PostgreSQL会进行类�
 
 
 
+整理：
+
+:warning:时间是人可识别的，时间戳基本是机器识别的，比如2022-01-01 00:00:00~1640966400~，前者是时间，后者是时间戳
+
+:one: 获取时间戳
+
+```sql
+--mysql
+select unix_timestamp('2022-01-01 00:00:00');
+
+-- hive 
+select unix_timestamp('2022-01-01 00:00:00');
+
+-- impala 没找到
+
+-- pg
+
+```
+
+:two:获取时间
+
+```sql
+-- mysql
+select now();
+
+-- hive
+select from_unixtime( unix_timestamp());
+
+-- impala
+select now(),  utc_timestamp(),current_timestamp(),from_unixtime( unix_timestamp());
+
+-- pg
+select  now() ,  current_timestamp;
+
+```
 
 
+
+
+
+impala，mysql，hive,pg库获取当前时间的方式，已及获取当前时间戳的方式；timediff的方式
 
 
 

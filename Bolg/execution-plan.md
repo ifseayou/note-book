@@ -76,6 +76,10 @@ Spark中SQL(DataSet，DataFrame，Cypher)的解析，分析，优化等都是由
 
 
 
+### 5-Hive执行计划
+
+
+
 以上就是关于执行计划的一个不深不浅的描述，欢迎吐槽，欢迎关注公众号 ：stackoverflow
 
 

@@ -200,6 +200,18 @@ dense_rank , the word dense means “稠密的” , dense_rank means the   no ho
 ###### [015- `LeetCode`180problem](https://leetcode.com/problems/consecutive-numbers/)
 
 ```sql
+-- method 1 ,this is a common way 
+select  num as ConsecutiveNums
+from (
+         select num
+              , cast(id as signed) - row_number() over(partition by num order by id) as diff
+         from Logs
+     ) t
+group by diff,num
+having count(*) >=3
+;
+
+-- method 2 , this is a personal way
 select distinct num as  ConsecutiveNums 
 from (
          select num
@@ -212,25 +224,6 @@ and lag_2 = num
 ```
 
 ###### [016- `LeetCode`184problem](https://leetcode.com/problems/department-highest-salary/)
-
-```sql
-select t2.name as Department
-     ,  t1.name as Employee
-     ,  t1.salary as Salary
-from  Employee t1
-left join Department t2
-on t1.departmentId = t2.id
-left join     
-    (
-         select departmentId
-              , max(salary) max_sal
-         from Employee
-         group by departmentId
-     ) t3
-on t1.departmentId= t3.departmentId
-where t1.salary = t3.max_sal
-;
-```
 
 ###### [017- `LeetCode`626problem](https://leetcode.com/problems/exchange-seats/)
 
@@ -269,6 +262,28 @@ where t.rk <= 3
 ###### [019- `LeetCode`1601problem](https://leetcode.com/problems/human-traffic-of-stadium/)
 
 ```sql
+-- method 0 , a common solution
+with tmp1 as (
+    select id
+              , visit_date
+              , people
+              , id - row_number() over(order by id) as diff
+    from stadium
+    where people >=100
+)
+select id,visit_date ,people
+from (
+         select id
+              , visit_date
+              , people
+              , diff
+              , count(*) over( partition  by diff) as cnt
+         from tmp1
+     ) t
+where t.cnt >=3
+;
+
+-- method 1
 select distinct t1.*
 from stadium t1, stadium t2, stadium t3
 where t1.people >= 100
@@ -281,6 +296,7 @@ where t1.people >= 100
     )
 order by id;
 
+-- method 2
 -- the first method is faster than the second method
 
 select distinct t1.*
@@ -300,25 +316,6 @@ order by id
 ```
 
 ###### [020-`LeetCode`262 problem](https://leetcode.com/problems/trips-and-users/)
-
-```sql
-select request_at as  Day
-     , round(sum(if(t1.status in ('cancelled_by_client', 'cancelled_by_driver'), 1, 0)) / count(*), 2) as `Cancellation Rate`
-from Trips t1
-left join Users t2
-on t1.client_id = t2.users_id
--- and t2.banned = 'No'
-left join Users t3
-on t1.driver_id = t3.users_id
--- and t3.banned = 'No'
-where t1.request_at >= '2013-10-01'
-  and t1.request_at <= '2013-10-03'
-  and t2.banned = 'No'
-  and t3.banned = 'No'
-group by request_at
-```
-
-
 
 ###### 021~027-`滴滴数据分析实习生笔试` 7 个 problem
 
@@ -347,8 +344,8 @@ where city_name = 'Beijing'
 select to_date(finish_time)
      , count(*) / count(distinct t1.driver_id)
 from `od` t1
-         left join `drv` t2
-                   on t1.driver_id = t2.driver_id
+left join `drv` t2
+on t1.driver_id = t2.driver_id
 where t1.finish_time >= '2021-05-01 00:00:00'
   and t1.finish_time < '2021-05-08 00:00:00'
   and t1.city_name = 'Beijing'
@@ -359,8 +356,8 @@ group by to_date(t1.finish_time)
 --
 select count(*) / count(distinct t1.driver_id) / 7
 from `od` t1
-         left join `drv` t2
-                   on t1.driver_id = t2.driver_id
+left join `drv` t2
+on t1.driver_id = t2.driver_id
 where t1.finish_time >= '2021-05-01 00:00:00'
   and t1.finish_time < '2021-05-08 00:00:00'
   and t1.city_name = 'Beijing'
@@ -472,110 +469,15 @@ from (
 
 ###### [028-`nowcoder` SQL93 Problem](https://www.nowcoder.com/practice/048ed413ac0e4cf4a774b906fc87e0e7?tpId=82&&tqId=38864&rp=1&ru=/ta/sql&qru=/ta/sql/question-ranking)
 
-```sql
-select distinct  music_name
-from music_likes t1
-left join music t2
-on t1.music_id = t2.id
-where t1.user_id in ( -- 2,4
-    select follower_id
-    from follow
-    where user_id = 1
-)
-and t1.music_id not in (
-    select music_id
-    from music_likes
-    where user_id = 1
-    )
-order by music_id
-;
-```
-
 ###### [029-`nowcoder` SQL92 Problem](https://www.nowcoder.com/practice/f257dfc1b55e42e19eec004aa3cb4174?tpId=82&tags=&title=&difficulty=0&judgeStatus=0&rp=1)
-
-```sql
-select t1.goods_id  as id
-     , max(t2.name) as name
-     , max(weight)  as weight
-     , sum(count)   as total
-from trans t1
-left join goods t2
-on t1.goods_id = t2.id
-group by t1.goods_id
-having sum(count) > 20
-   and max(t2.weight) < 50
-order by t1.goods_id
-;
-```
-
-
 
 ###### [030-`nowcoder` SQL89 Problem](https://www.nowcoder.com/practice/1bfe3870034e4efeb4b4aa6711316c3b?tpId=82&&tqId=38359&rp=1&ru=/ta/sql&qru=/ta/sql/question-ranking)
 
-```sql
-select t2.name as name,
-       sum(t1.grade_num) as grade_num
-from grade_info t1
-left join user t2
-on t1.user_id = t2.id
-group by t2.name
-order by grade_num desc
-limit  1;
-```
-
-
-
 ###### [031-`nowcoder` SQL90 Problem](https://www.nowcoder.com/practice/f257dfc1b55e42e19eec004aa3cb4174?tpId=82&tags=&title=&difficulty=0&judgeStatus=0&rp=1)
-
-```sql
-select id
-     , name
-     , grade_num
-from (
-         select max(t2.id)        as                                id
-              , t2.name           as                                name
-              , sum(t1.grade_num) as                                grade_num
-              , dense_rank() over (order by sum(t1.grade_num) desc)  as rk
-         from grade_info t1
-         left join user t2
-         on t1.user_id = t2.id
-         group by t2.name
-     ) t
-where rk = 1
-order by id
-;
-```
 
 ###### [032-`nowcoder` SQL91 Problem](https://www.nowcoder.com/practice/d2b7e2a305a7499fb310dc82a43820e8?tpId=82&tags=&title=&difficulty=0&judgeStatus=0&rp=1)
 
-```sql
-select id
-     , name
-     , grade_num
-from (
-         select max(t2.id)                                            as id
-              , t2.name                                               as name
-              , sum(if(t1.type = 'add', t1.grade_num, -1 * t1.grade_num)) as grade_num
-              , dense_rank() over (order by sum(if(t1.type = 'add', t1.grade_num, -1 * t1.grade_num)) desc)   as rk
-         from grade_info t1
-         left join user t2
-         on t1.user_id = t2.id
-         group by t2.name
-     ) t
-where rk = 1
-order by id
-;
-```
-
 ###### [033-`nowcoder` SQL87 Problem](https://www.nowcoder.com/practice/ae5e8273e73b4413823b676081bd355c?tpId=82&&tqId=37925&rp=1&ru=/ta/sql&qru=/ta/sql/question-ranking)
-
-```sql
-select grade,
-       sum(number) over (order by  grade) t_rank
-from class_grade
-order by t_rank
-;
-```
 
 ###### [033-`nowcoder` SQL88 Problem](https://www.nowcoder.com/practice/165d88474d434597bcd2af8bf72b24f1?tpId=82&tqId=37925&rp=1&ru=%2Fta%2Fsql&qru=%2Fta%2Fsql%2Fquestion-ranking)
 
@@ -593,26 +495,9 @@ where a >= total / 2
 order by grade;
 ```
 
-<img src="./img/sql/03.jpg" width = "50%" height = "30%" alt="图片名称" align=center />
+<img src="./img/sql/03.jpg" width = "50%" height = "30%" alt="图片名称" align=center /> 
 
 ###### [034-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/96263162f69a48df9d84a93c71045753?tpId=268&tags=&title=&difficulty=0&judgeStatus=0&rp=0)
-
-```sql
-select  video_id
-, round(sum(tag)/count(*),3) as avg_com_play_rate
-from(
-select t1.video_id
-        , if(t2.duration <= timestampdiff(second, t1.start_time, t1.end_time),1,0) as tag
-from tb_user_video_log t1
-left join tb_video_info t2
-on t1.video_id = t2.video_id
-    where t1.start_time >= '2021-01-01 00:00:00'
-    and t1.end_time < '2022-01-01 00:00:00'
-    ) t
-group by video_id
-order by avg_com_play_rate desc
-;
-```
 
 ###### [035-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/c60242566ad94bc29959de0cdc6d95ef?tpId=268&tqId=2285032&ru=%2Fta%2Fsql-factory-interview&qru=%2Fta%2Fsql-factory-interview%2Fquestion-ranking)
 

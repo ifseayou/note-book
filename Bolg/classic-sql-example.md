@@ -1,6 +1,6 @@
 # 好用的SQL范例
 
-01-delete-duplicate-emails
+01-[delete-duplicate-emails](https://leetcode.com/problems/delete-duplicate-emails/)
 
 ```sql
 -- method 1 
@@ -19,10 +19,8 @@ where Id not in (
 delete
 from Person
 where id In
-      (
-          select id
-          from (
-                   select email
+      (   select id
+          from (   select email
                         , id
                         , row_number() over (partition by email order by id asc) as rank_id
                    from Person
@@ -40,7 +38,7 @@ where Id not in (
 );
 ```
 
-02-rising-temperature
+02-[rising-temperature](https://leetcode.com/problems/rising-temperature/submissions/)
 
 ```sql
 -- just a windows function , to avoid the every one or more day such as 2022-05-01 2022-05-04, we use timestampdiff function
@@ -61,14 +59,14 @@ and date_diff = 1
 select timestampdiff(day,'2022-05-04','2022-05-05') -- 1
 ```
 
-03-swap-salary
+03-[swap-salary](https://leetcode.com/problems/swap-salary/)
 
 ```sql
 update Salary
 set sex = if(sex = 'm','f','m');
 ```
 
-04-nth-highest-salary
+04-[nth-highest-salary](https://leetcode.com/problems/nth-highest-salary/)
 
 ```sql
 select max(salary)
@@ -122,4 +120,53 @@ from seat
        from seat ) as seat_counts
 order by id asc;
 ```
+
+优先考虑偶数情况，然后再考虑奇数情况
+
+07-[human-traffic-of-stadium/](https://leetcode.com/problems/human-traffic-of-stadium/submissions/)
+
+```sql
+with tmp1 as (
+    select id
+              , visit_date
+              , people
+              , id - row_number() over(order by id) as diff
+    from stadium
+    where people >=100
+)
+select id,visit_date ,people
+from (
+         select id
+              , visit_date
+              , people
+              , diff
+              , count(*) over( partition  by diff) as cnt
+         from tmp1
+     ) t
+where t.cnt >=3
+```
+
+08-[中位数档次](https://www.nowcoder.com/practice/165d88474d434597bcd2af8bf72b24f1?tpId=82&tqId=37925&rp=1&ru=%2Fta%2Fsql&qru=%2Fta%2Fsql%2Fquestion-ranking)
+
+```sql
+select grade
+from (
+         select grade
+              , ( select sum(number) from class_grade ) as total
+              , sum(number) over (order by grade)          a
+              , sum(number) over (order by grade desc)     b
+         from class_grade
+     ) t
+where a >= total / 2
+  and b >= total / 2
+order by grade;
+```
+
+具体的图解如下图：
+
+<img src="./img/cse/01.jpg" width = "100%" height = "30%" alt="图片名称" align=center />
+
+
+
+
 
