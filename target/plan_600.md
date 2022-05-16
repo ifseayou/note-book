@@ -501,23 +501,6 @@ order by grade;
 
 ###### [035-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/c60242566ad94bc29959de0cdc6d95ef?tpId=268&tqId=2285032&ru=%2Fta%2Fsql-factory-interview&qru=%2Fta%2Fsql-factory-interview%2Fquestion-ranking)
 
-```sql
-select tag,
-       concat(round(avg(rate) * 100,2),'%')  as avg_play_progress
-from (
-select t1.video_id
-        , t2.tag
-        , if(t2.duration <= timestampdiff(second, t1.start_time, t1.end_time),1, timestampdiff(second, t1.start_time, t1.end_time) / t2.duration) as rate
-from tb_user_video_log t1
-left join tb_video_info t2
-on t1.video_id = t2.video_id
-    ) t
-group by tag
-having avg(rate)> 0.6
-order by avg_play_progress desc
-;
-```
-
 ###### [036-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/a78cf92c11e0421abf93762d25c3bfad?tpId=268&tqId=2285068&ru=/ta/sql-factory-interview&qru=/ta/sql-factory-interview/question-ranking)
 
 :one: 
@@ -564,14 +547,13 @@ from (
               , retweet_cnt
               , sum(like_cnt) over (partition by tag order by dt rows 6 preceding)    as sum_like_cnt_7d
               , max(retweet_cnt) over (partition by tag order by dt rows 6 preceding) as max_retweet_cnt_7d
-         from (
-                  select t2.tag
+         from (	  select t2.tag
                        , date(t1.start_time) dt
                        , sum(if_like)    as  like_cnt
                        , sum(if_retweet) as  retweet_cnt
                   from tb_user_video_log t1
-                           left join tb_video_info t2
-                                     on t1.video_id = t2.video_id
+                  left join tb_video_info t2
+                  on t1.video_id = t2.video_id
                   where date(start_time) <= '2021-10-03'
                     and date(start_time) >= date_sub('2021-10-01', interval 6 day)
                   group by t2.tag, date(t1.start_time)
@@ -605,17 +587,6 @@ order by hot_index desc limit 3
 
 ###### [039-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/8e33da493a704d3da15432e4a0b61bb3?tpId=268&tqId=2285071&ru=%2Fpractice%2Ff90ce4ee521f400db741486209914a11&qru=%2Fta%2Fsql-factory-interview%2Fquestion-ranking)
 
-```sql
-select  substring(in_time,1,10) as dt ,
-       round(sum(timestampdiff(second ,in_time,out_time)) / count(distinct uid),1) as avg_view_len_sec
-from tb_user_log
-where in_time >= '2021-11-01'
-and in_time < '2021-12-01'
-and artical_id <> 0
-group by substring(in_time,1,10)
-order by avg_view_len_sec;
-```
-
 ###### [040-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/fe24c93008b84e9592b35faa15755e48?tpId=268&tqId=2285071&ru=%2Fpractice%2Ff90ce4ee521f400db741486209914a11&qru=%2Fta%2Fsql-factory-interview%2Fquestion-ranking)
 
 ```sql
@@ -642,7 +613,7 @@ group by artical_id
 order by max_uv desc;
 ```
 
-Gudience : this method called **[code plus union](编码+联立)**, you should pay attention to the `over (partition by artical_id order by dt,diff desc)`。
+Gudience : this method called **[code plus union](编码+联立)**, you should pay attention to the `over (partition by artical_id order by dt,diff desc)`
 
 ###### [041-`nowcoder` SQL Problem](https://www.nowcoder.com/practice/fe24c93008b84e9592b35faa15755e48?tpId=268&tqId=2285071&ru=%2Fpractice%2Ff90ce4ee521f400db741486209914a11&qru=%2Fta%2Fsql-factory-interview%2Fquestion-ranking)
 

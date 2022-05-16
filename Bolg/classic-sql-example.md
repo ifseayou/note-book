@@ -166,7 +166,174 @@ order by grade;
 
 <img src="./img/cse/01.jpg" width = "100%" height = "30%" alt="图片名称" align=center />
 
+09-一些时间处理
+
+:one:[`start_time`~某个时间字段~时间的最近三十天](https://www.nowcoder.com/practice/a78cf92c11e0421abf93762d25c3bfad?tpId=268&tqId=2285068&ru=/ta/sql-factory-interview&qru=/ta/sql-factory-interview/question-ranking)
+
+```sql
+-- mysq 语法
+datediff((select max(start_time) from tb_user_video_log), t1.start_time) <= 29
+```
+
+上面的例子中，对于状态位标记为1，0的这种状态，求和可复用，`sum(t1.if_retweet) as retweet_cnt` 大于 `sum(if(t1.if_retweet=1,1,0))`
+
+:two:最近7天内，一般而言最近7天都是包含今天~计算日期~的
+
+```sql
+select date_add('2022-01-07', -6);
+-- 最近的7天分别是：
+2022-01-01,2022-01-02,2022-01-03,2022-01-04,2022-01-05,2022-01-06,2022-01-07
+```
+
+10-[国庆期间每类视频的点赞量和转发量](https://www.nowcoder.com/practice/f90ce4ee521f400db741486209914a11?tpId=268&tags=&title=&difficulty=0&judgeStatus=0&rp=0)
+
+```sql
+select tag
+     , dt
+     , sum_like_cnt_7d
+     , max_retweet_cnt_7d
+from (
+         select tag
+              , dt
+              , like_cnt
+              , retweet_cnt
+              , sum(like_cnt) over (partition by tag order by dt rows 6 preceding)    as sum_like_cnt_7d
+              , max(retweet_cnt) over (partition by tag order by dt rows 6 preceding) as max_retweet_cnt_7d
+         from (	  select t2.tag
+                       , date(t1.start_time) dt
+                       , sum(if_like)    as  like_cnt
+                       , sum(if_retweet) as  retweet_cnt
+                  from tb_user_video_log t1
+                  left join tb_video_info t2
+                  on t1.video_id = t2.video_id
+                  where date(start_time) <= '2021-10-03'
+                    and date(start_time) >= date_sub('2021-10-01', interval 6 day)
+                  group by t2.tag, date(t1.start_time)
+              ) t
+     ) t2
+where dt >= '2021-10-01'
+  and dt <= '2021-10-03'
+order by tag desc,dt;
+```
+
+11-[近一个月发布的视频中热度最高的top3视频](https://www.nowcoder.com/practice/0226c7b2541c41e59c3b8aec588b09ff?tpId=268&tqId=2285071&ru=/practice/f90ce4ee521f400db741486209914a11&qru=/ta/sql-factory-interview/question-ranking)
+
+```sql
+select video_id,
+       round((100 * complete_rate + 5 * like_cnt + 3 * comment_cnt + 2 * retweet_cnt) 
+                 / (un_play_day_cnt + 1),0) as hot_index
+from (
+ select t1.video_id
+      , sum(if(t2.duration <= timestampdiff(second, start_time, end_time), 1, 0))
+            / count(*) as complete_rate
+      , sum(if_like)         as like_cnt
+      , count(comment_id)    as comment_cnt
+      , sum(if_retweet)      as retweet_cnt
+      , datediff(( select max(end_time) from tb_user_video_log ), 
+                 max(t1.end_time))  as un_play_day_cnt
+ from tb_user_video_log t1
+ inner join tb_video_info t2
+ on t1.video_id = t2.video_id
+ where datediff(( select max(end_time) from tb_user_video_log ), t2.release_time) <= 29
+ group by t1.video_id
+) t
+order by hot_index desc limit 3
+```
+
+12-[每篇文章同一时刻最大在看人数](https://www.nowcoder.com/practice/fe24c93008b84e9592b35faa15755e48?tpId=268&tqId=2285071&ru=%2Fpractice%2Ff90ce4ee521f400db741486209914a11&qru=%2Fta%2Fsql-factory-interview%2Fquestion-ranking)
+
+```sql
+select artical_id,
+       max(uv) as max_uv
+from (
+         select artical_id,dt,diff
+              , sum(diff) over (partition by artical_id order by dt,diff desc) uv
+         from (	  select artical_id
+                       , in_time as dt
+                       , 1       as diff
+                  from tb_user_log
+                  where artical_id <> 0
+                  union all
+                  select artical_id
+                       , out_time as dt
+                       , -1       as diff
+                  from tb_user_log
+                  where artical_id <> 0
+              ) t
+     ) t1
+group by artical_id
+order by max_uv desc;
+```
+
+这种方法学名叫做：编码+联立~code-plus-union~，具体的图示如下：
+
+<img src="./img/cse/02.jpg" width = "100%" height = "30%" alt="图片名称" align=center />
+
+13-[2021年11月每天新用户的次日留存率](https://www.nowcoder.com/practice/1fc0e75f07434ef5ba4f1fb2aa83a450?tpId=268&tags=&title=&difficulty=0&judgeStatus=0&rp=0)
+
+```sql
+with tmp as (
+    select uid
+         , dt
+         , count(*) over (partition by uid order by dt) cnt
+    from (
+             select uid
+                  , date(in_time) as dt
+             from tb_user_log
+             union
+             select uid
+                  , date(out_time) as dt
+             from tb_user_log
+         ) t
+)
+select today.dt as dt
+     , round(count(tomorrow.uid) / count(*),2) as uv_left_rate
+from tmp today
+left join tmp tomorrow
+on today.uid= tomorrow.uid
+and today.dt = date_sub(tomorrow.dt, interval 1 day)  -- 控制点x
+where today.cnt = 1									 
+and today.dt >= '2021-11-01'
+and today.dt <= '2021-11-30'
+group by today.dt
+order by dt
+;
+```
+
+控制点x的变动可以改变n日留存，方法示意图示如下：
+
+<img src="./img/cse/03.jpg" width = "100%" height = "30%" alt="图片名称" align=center />
 
 
 
+```sql
+with max_day as (
+    select date(max(in_time)) as today
+    from tb_user_log
+)
+select user_grade,
+       round(count(*) / (select count(distinct uid) from tb_user_log),2) as ratio
+from (
+ select uid
+      , case
+            when date(max(in_time)) between date_sub(( select today from max_day ), interval 6 day) 
+                and ( select today from max_day ) -- 最大活跃日期在7天之内
+                and date(min(in_time)) < date_sub(( select today from max_day ), interval 6 day) -- 最小活跃日期在7天开外(非新晋用户)
+                then '忠实用户'
+            when date(min(in_time)) between date_sub(( select today from max_day ), interval 6 day) 
+                and ( select today from max_day ) -- 最小活跃日期在7天之内
+                then '新晋用户'
+            when date(max(in_time)) between date_sub(( select today from max_day ), interval 6 day) 
+                and date_sub(( select today from max_day ), interval 29 day) -- 最大活跃日期在7天和30天范围之间的
+                then '沉睡用户'
+            else '流失用户' -- 最大活跃日期小于[三十天前]
+     end as user_grade
+ from tb_user_log
+ group by uid
+ ) t
+group by user_grade
+order by ratio desc
+```
+
+使用线段去理解该问题
 

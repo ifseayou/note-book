@@ -495,6 +495,16 @@ impala，mysql，hive,pg库获取当前时间的方式，已及获取当前时�
 
 
 
+整理，窗口函数的范围选择，
+
+```sql
+agg_func over(order by col_name rows between 1 proceding and 1 following) -- col_name的前后1行
+agg_func over(order by col_name range between 1 proceding and 1 following) -- col_nmae值的(+/- 1) 的值
+
+agg_func over(order by col_name rows between unbounded preceding and unbounded following) -- 全部行
+agg_func over(order by col_name rows between unbounded preceding and current row) -- 开头到当前行
+```
+
 
 
 
