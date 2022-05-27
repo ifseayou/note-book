@@ -445,9 +445,15 @@ Hive 会将字符串转为null写入；Impala，MySQL，PostgreSQL会进行类�
 
 任何引擎，`union all`的类型必须保持一致
 
+### 5.4-组合主键非`null`
 
+对于`test01`表，字段`a`和字段`b`在作为联合主键时，在字段`a`为`null`，字段`b`非`null`的时候
 
+:one:`kudu`将不会写入该记录，不会抛异常
 
+:two:`mysql`插入时抛出异常 类似(`primary key not null`)
+
+:three:`postgresql` 插入时抛出异常 类似(`primary key not null`)
 
 
 
@@ -499,7 +505,7 @@ impala，mysql，hive,pg库获取当前时间的方式，已及获取当前时�
 
 ```sql
 agg_func over(order by col_name rows between 1 proceding and 1 following) -- col_name的前后1行
-agg_func over(order by col_name range between 1 proceding and 1 following) -- col_nmae值的(+/- 1) 的值
+agg_func over(order by col_name range between 1 proceding and 1 following) -- col_name值的(+/- 1) 的值
 
 agg_func over(order by col_name rows between unbounded preceding and unbounded following) -- 全部行
 agg_func over(order by col_name rows between unbounded preceding and current row) -- 开头到当前行

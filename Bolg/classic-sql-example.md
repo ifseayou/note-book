@@ -335,5 +335,3 @@ group by user_grade
 order by ratio desc
 ```
 
-使用线段去理解该问题
-
