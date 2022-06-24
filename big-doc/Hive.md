@@ -513,6 +513,12 @@ agg_func over(order by col_name rows between unbounded preceding and current row
 
 
 
+去掉文本中的换行符和制表符
+
+```sql
+regexp_replace(order_context,'\\s+','') as order_context
+```
+
 
 
 ### 关联条件中出现if
