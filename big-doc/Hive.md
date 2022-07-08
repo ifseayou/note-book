@@ -513,11 +513,30 @@ agg_func over(order by col_name rows between unbounded preceding and current row
 
 
 
-去掉文本中的换行符和制表符
+去掉文本中的换行符/回车符/制表符/空格
 
 ```sql
 regexp_replace(order_context,'\\s+','') as order_context
 ```
+
+由于特殊字符导致表错位串行的问题描述
+
+<img src="./img/hive/18.jpg" width = 100% height = 100% alt="图片名称" align=left/>
+
+```sql
+select '1\r2\t\3\n4\0015'
+	,regexp_replace('1\r2\t\3\n4','\\s+','')
+	,regexp_replace('1     \r2\t\3\n4\0015','\\s+','')
+	,regexp_replace('1     \r2\t\3\n4\0015','\t|\n|\001|\r','')
+```
+
+
+
+
+
+
+
+
 
 
 
