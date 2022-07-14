@@ -8,9 +8,7 @@
 
 
 
-
-
-
+## 常见SQL及其执行计划
 
 表结构及数据
 
@@ -37,6 +35,38 @@ select 3 as order_no , 2 as user_id , '002' as goods_id
 ```
 
 
+
+<img src="./img/imp/01.jpg" width = "100%" height = "30%" alt="图片名称" align=center />
+
+
+
+<img src="./img/imp/02.jpg" width = "100%" height = "30%" alt="图片名称" align=center />
+
+
+
+<img src="./img/imp/03.jpg" width = "100%" height = "30%" alt="图片名称" align=center />
+
+
+
+<img src="./img/imp/04.jpg" width = "100%" height = "30%" alt="图片名称" align=center />
+
+
+
+<img src="./img/imp/05.jpg" width = "100%" height = "30%" alt="图片名称" align=center />
+
+
+
+下图是关于大表的关联`dwd.live_order_basic_di` ,`dwd.live_order_goods_di` 是亿级的大表
+
+<img src="./img/imp/06.jpg" width = "100%" height = "30%" alt="图片名称" align=center />
+
+
+
+<img src="./img/imp/07.jpg" width = "100%" height = "30%" alt="图片名称" align=center />
+
+
+
+<img src="./img/imp/09.jpg" width = "100%" height = "30%" alt="图片名称" align=center />
 
 
 

@@ -8,9 +8,9 @@
 
 
 
-**字体加粗** ``ctr/command + b`
+**字体加粗** `ctr/command + b`
 
-*斜体*   ``ctr/command + i`
+*斜体*   `ctr/command + i`
 
 ~~画个删除线~~
 
