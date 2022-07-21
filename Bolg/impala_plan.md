@@ -117,7 +117,11 @@ select 3 as order_no , 2 as user_id , '002' as goods_id
 
 :tipping_hand_man: 所以一个建议是在涉及大表的查询/关联时，不建议优先执行 `compute stats tb_name`
 
+Impala在没有收集统计信息的前提下，执行关联有如下逻辑
 
+:one: `t1 left join t2` ，`exchange` (哈希或者广播) t2表
+
+:two: `t1 right join t2` , `exchange` (哈希或者广播) t1表
 
 #### :b: 关于行列剪裁的辨析
 
