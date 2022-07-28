@@ -174,6 +174,8 @@ group by mid_id,diff
 having count(*) >=3 ;
 ```
 
+对于类似的连续X天的问题，自关联是另外的一种解题思路，关联时，使用 `t1.mid_id = t2.mid and t1.dt = date_sub(t2.dt,x)`的方式
+
 ### 3.5-left semi join
 
 关于`left semi join` 注意2点：
@@ -510,6 +512,12 @@ agg_func over(order by col_name range between 1 proceding and 1 following) -- co
 agg_func over(order by col_name rows between unbounded preceding and unbounded following) -- 全部行
 agg_func over(order by col_name rows between unbounded preceding and current row) -- 开头到当前行
 ```
+
+<img src="./img/hive/19.png" width = 100% height = 100% alt="图片名称" align=left/>
+
+
+
+<img src="./img/hive/20.png" width = 100% height = 100% alt="图片名称" align=left/>
 
 
 

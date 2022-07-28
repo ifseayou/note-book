@@ -1,0 +1,76 @@
+# 电商模块知识
+
+### 电商自营和电商平台
+
+最典型的就是京东和淘宝的区别，关于这两者的区别，我浏览了国内很多讲述电商自营和电商平台的文章，讲的很不到位：
+
+下面2点区别是Quora问答网站上一个在中国生活了十年的老外从的回答[^i]，真的是外来的和尚会念经
+
+* 京东：JD is a shopping platform that offers products from a variety of different brands that set up flagship stores on their website,Taxes are included on all JD goods, so you can easily get an invoice for tax deductions
+* 淘宝：Any person can register a shop on Taobao and start selling goods,Items on Taobao usually don’t include taxes in the price, so you’ll probably have to request an invoice separately(and usually pay more)
+
+
+
+> [^i]:原文从开店者，物流，发票三个角度进行了问题的回复：https://www.quora.com/What-are-the-main-differences-between-Jingdong-and-Taobao
+
+人人都是产品经理的相关文章：
+
+[京东与淘宝模式的区别：利润来源不同影响商业模式](https://www.woshipm.com/evaluating/216032.html)
+
+[自营型电商与平台型电商的区别，你知道吗？](https://www.woshipm.com/it/3881386.html)
+
+知乎上关于这个问题前三的回答值得读：https://www.zhihu.com/question/20011796
+
+当你在淘宝上买东西的时候，老外在说人话，中国写手总是试图站在一个非常高的角度给你一个概括性的解答，这对一个领域内知识不够了解的读者来说，读起来简直有些云里雾里，此时如果去看看老外的大白话，总是感觉无比的亲民。
+
+Before you buy anything on Taobao you need to read up on the seller and see if someone else sells that item for a cheaper price. This can take hours but due to competition among sellers, prices on Taobao can be a lot lower than on JD
+
+If you want fresh food or items with a guarantee of quality and warranty, go with JD.com. If you want the lowest price and a wider variety of choice you should go with Taobao[^ii]
+
+> [^ii]:https://thetravelbugbite.com/2017/03/28/online-shopping-in-china-jd-vs-taobao/
+
+商业模式的角度，公司的角度，消费者的角度
+
+
+
+本质上，淘宝是平台，更像是一个农贸市场，菜贩们不论卖的菜好还是坏，有没有偷斤少两，只要给我租金，我就让它进来卖。（淘宝前期干死Ebay靠的是免费，但现在已经开始收费了）而京东是一个立志做高品质的大菜贩，菜自己进自己卖，自己保证菜足够好
+
+
+
+
+
+总结来看
+
+|                | 电商平台~淘宝，天猫~ | 电商自营~京东，亚马逊~               |
+| -------------- | -------------------- | :----------------------------------- |
+|                | 平台是中间商         | 平台就是卖家~平台采购然后卖给消费者~ |
+| 利润方式       | 拿佣金               | 赚个差价                             |
+| 开店模式       | 公司/个体户/个人     | 京东自己某品牌的旗舰店               |
+| 发货           | 卖家发货/慢          | 平台发货/快                          |
+| 物流体系       | 菜鸟网络             | 京东物流                             |
+| 售后           | 能否保证看卖家       | 有保障                               |
+| 是否           | 可以砍价             | 想多了                               |
+| 买家第一需求点 | 便宜                 | 质量                                 |
+| 发票           | :star:               | :star::star::star::star::star:       |
+|                |                      |                                      |
+|                |                      |                                      |
+
+> [^q]: 京东主要是自营
+
+
+
+我们发现，淘宝上卖东西，成交之后会，淘宝会收取卖家一笔费用~佣金~
+
+在直播带货中，对于CPS的商品，商家会付佣金给主播，还会付佣金~技术服务费~给抖快平台
+
+
+
+#### **库存周转天数--概念**
+
+
+
+
+
+## 商品模块的设计
+
+主要看这个文章：[8000字讲清楚从0到1搭建电商商品中心](https://www.163.com/dy/article/H10BOI2Q0511805E.html)

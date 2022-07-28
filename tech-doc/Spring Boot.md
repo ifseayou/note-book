@@ -31,7 +31,7 @@
 
 * 牵一发而动全身；
 
- 而微服务，，每一个功能，都可以作为一个独立的模块，运行在独立的进程中，作为一个服务对外提供。服务之前的通信使用HTTP RESTful 
+ 而微服务，，每一个功能，都可以作为一个独立的模块，运行在独立的进程中，作为一个服务对外提供。服务之间的通信使用HTTP RESTful 
 
 ## 环境准备
 
@@ -56,9 +56,9 @@
   	</activation>  
  	<properties>    
     	 <maven.compiler.source>1.8</maven.compiler.source>    
- 		 <maven.compiler.target>1.8</maven.compiler.target>     
-		 <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion> 
-  </properties> 
+ 		   <maven.compiler.target>1.8</maven.compiler.target>     
+		   <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion> 
+  </properties>
 </profile>
 
 ~~~
