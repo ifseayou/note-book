@@ -120,6 +120,27 @@ instr(string string, string substring)
 > * over(partition by ) 分区内全局求和
 > * over(partition by order by) 分区内累积求和 
 
+内网环境下，下面的脚本分别在impala，hive，holo，pg , mysql ,执行以下，看下是什么情况
+
+```sql
+with tmp1 as (
+    select 'a' as a,1 as b 
+    union all
+    select 'a' as a , 2 as b
+    union all 
+    select 'b' as b , 10 as b
+)
+select a , 
+     avg(b) over(partition by a order by b) x ,
+     sum(b) over(partition by a order by b) y
+from tmp1 
+;
+```
+
+下面这个网站的内容不一定是准确的：https://www.geeksforgeeks.org/window-functions-in-sql/
+
+
+
 ### 3.2-侧写视图(lateral view)
 
 🎈侧写试图主要用来处理行转列的问题
@@ -144,6 +165,10 @@ from (
 
 * lag 是获取上一个
 * lead 是获取下一个
+
+SQL标准中认为第一行是后面，第二行是前面，即
+
+<img src="./img/hive/21.png" width = 100% height = 45% alt="图片名称" align=center />
 
 ### 3.4-一周内连续3天活跃
 
@@ -285,6 +310,32 @@ from (
 order by a desc
 limit 3 offset 3; 
 ```
+
+### 3.8-ntile+over
+
+`ntile(x)`将数据划均分为x个桶，并且返回桶编号，如果有多的元素，优先进入第一个桶
+
+<img src="./img/hive/22.png" width = 100% height = 25% alt="图片名称" align=left />
+
+```sql
+with tmp1 as (
+    select 'a' as name , 'one' as claz, 1 as score union all
+    select 'b' as name , 'two' as claz, 2 as score union all
+    select 'c' as name , 'two' as claz, 3 as score union all
+    select 'd' as name , 'one' as claz, 4 as score union all
+    select 'e' as name , 'one' as claz, 5 as score union all
+    select 'f' as name , 'two' as claz, 6 as score union all
+    select 'g' as name , 'one' as claz, 7 as score union all
+    select 'h' as name , 'one' as claz, 8 as score union all
+    select 'i' as name , 'two' as claz, 9 as score union all
+    select 'j' as name , 'two' as claz, 0 as score
+)
+select *
+     , ntile(2) over(partition by claz order by score) rn
+from tmp1;
+```
+
+
 
 ## 04-引擎的一些不同
 
