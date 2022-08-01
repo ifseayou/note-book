@@ -335,6 +335,10 @@ select *
 from tmp1;
 ```
 
+### 3.9-like多个字段
+
+<img src="./img/hive/23.png" width = 100% height = 25% alt="图片名称" align=left />
+
 
 
 ## 04-引擎的一些不同
